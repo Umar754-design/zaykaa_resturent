@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zaykaa Café & Restaurant | Good Food Good Mood</title>
+    <meta name="description" content="Order authentic biryani, kebabs, pure veg dishes, and artisanal beverages online from Zaykaa Café & Restaurant.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+    <div id="toastContainer"></div>
+
+    <!-- Header / Navbar -->
+    <header class="header" id="header">
+        <nav class="navbar">
+            <div class="container">
+                <div class="navbar-content" style="display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                    <!-- Logo -->
+                    <a href="index.php" class="logo" style="display: flex; align-items: center; gap: 8px;">
+                        <span class="logo-text">Zaykaa</span>
+                        <span style="color: var(--gold); font-size: 16px;">🍃</span>
+                    </a>
+
+                    <!-- Location Selector -->
+                    <div class="location-pill-btn" onclick="openModal('locationModal')" style="display: flex; align-items: center; gap: 6px; background: #F8F5EC; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--primary-green); border: 1px solid var(--light-border);">
+                        <span>📍</span>
+                        <span id="headerLocationName">Dhanbad</span>
+                        <span style="font-size: 10px; color: #888;">▼</span>
+                    </div>
+
+                    <!-- Search Input Bar (Desktop) -->
+                    <div class="nav-search-box" style="flex: 1; max-width: 380px; position: relative;">
+                        <form action="search.php" method="GET" style="display: flex; align-items: center;">
+                            <input type="text" name="query" placeholder="Search menu, biryani, kebabs, drinks..." 
+                                   value=""
+                                   style="width: 100%; padding: 8px 16px 8px 36px; border-radius: 20px; border: 1px solid var(--light-border); font-size: 13px; outline: none; background: #FAF8F2;">
+                            <span style="position: absolute; left: 12px; color: #888; pointer-events: none; font-size: 14px;">🔍</span>
+                        </form>
+                    </div>
+                    
+                    <!-- Navigation Menu -->
+                    <ul class="nav-menu" id="navMenu" style="margin: 0; padding: 0;">
+                        <li><a href="index.php" class="nav-link ">Home</a></li>
+                    
+                        <li><a href="menu.php" class="nav-link active">Menu</a></li>
+                        <li><a href="about.php" class="nav-link ">About</a></li>
+                        <li><a href="contact.php" class="nav-link ">Contact</a></li>
+                    </ul>
+
+                    <!-- Cart Icon -->
+                    <a href="cart.php" class="cart-nav-icon" style="position: relative; display: flex; align-items: center; padding: 8px 12px; background: #FAF8F2; border-radius: 12px; border: 1px solid var(--light-border); color: var(--primary-green);">
+                        <span style="font-size: 18px;">🛒</span>
+                        <span class="cart-count-badge" style="display: none; position: absolute; top: -6px; right: -6px; background: #DC2626; color: #FFFFFF; font-size: 11px; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; align-items: center; justify-content: center;">0</span>
+                    </a>
+
+                    <!-- User Auth Button / Dropdown -->
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                            <a href="login.php" class="login-btn" style="padding: 7px 16px; border-radius: 20px; font-size: 13px;">Login</a>
+                            <a href="register.php" style="padding: 7px 16px; border-radius: 20px; font-size: 13px; background: var(--gold); color: #FFFFFF; font-weight: 600;">Sign Up</a>
+                        </div>
+                                        
+                    <!-- Mobile Hamburger -->
+                    <button class="mobile-toggle" id="mobileToggle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div style="height: 75px;"></div> <!-- Spacer for fixed header -->
+
+    
+    <!-- Location Modal -->
+    <div class="zayka-modal-backdrop" id="locationModal">
+        <div class="zayka-modal">
+            <div class="modal-header">
+                <h3>Select Your City / Delivery Location</h3>
+                <button class="modal-close" onclick="closeModal('locationModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <button onclick="detectLocation()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; background: #F8F5EC; border: 1px dashed var(--gold); border-radius: 12px; font-weight: 600; color: var(--primary-green); margin-bottom: 20px;">
+                    <span>📍</span> Detect Current GPS Location
+                </button>
+                <div style="font-size: 13px; color: #888; font-weight: 600; text-transform: uppercase; margin-bottom: 12px;">Popular Delivery Hubs</div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                                            <button onclick="selectCity('Dhanbad')" 
+                                style="padding: 12px; text-align: left; background: #063F2B; color: #FFFFFF; border: 1px solid var(--light-border); border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s;">
+                            🏙️ Dhanbad                        </button>
+                                            <button onclick="selectCity('Ranchi')" 
+                                style="padding: 12px; text-align: left; background: #FFFFFF; color: #333; border: 1px solid var(--light-border); border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s;">
+                            🏙️ Ranchi                        </button>
+                                            <button onclick="selectCity('Bokaro')" 
+                                style="padding: 12px; text-align: left; background: #FFFFFF; color: #333; border: 1px solid var(--light-border); border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s;">
+                            🏙️ Bokaro                        </button>
+                                            <button onclick="selectCity('Jamshedpur')" 
+                                style="padding: 12px; text-align: left; background: #FFFFFF; color: #333; border: 1px solid var(--light-border); border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s;">
+                            🏙️ Jamshedpur                        </button>
+                                            <button onclick="selectCity('Patna')" 
+                                style="padding: 12px; text-align: left; background: #FFFFFF; color: #333; border: 1px solid var(--light-border); border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s;">
+                            🏙️ Patna                        </button>
+                                            <button onclick="selectCity('Asansol')" 
+                                style="padding: 12px; text-align: left; background: #FFFFFF; color: #333; border: 1px solid var(--light-border); border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s;">
+                            🏙️ Asansol                        </button>
+                                    </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Sticky Cart bar -->
+    <div class="floating-cart-bar" id="floatingCartBar" style="display: none;" onclick="window.location.href='cart.php'">
+        <span>🛍️ View Cart</span>
+        <span class="cart-summary-text">0 items</span>
+        <span>→</span>
+    </div>
+
+    <script>
+    // Close user dropdown if clicked outside
+    window.addEventListener('click', function(e) {
+        const dd = document.getElementById('userMenuDropdown');
+        if (dd && !e.target.closest('.user-dropdown-wrap')) {
+            dd.classList.remove('active');
+            dd.style.display = 'none';
+        } else if (dd && dd.classList.contains('active')) {
+            dd.style.display = 'block';
+        }
+    });
+
+    function detectLocation() {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    showToast("GPS coordinates acquired! Setting to nearest hub (Dhanbad)", "success");
+                    selectCity('Dhanbad');
+                },
+                function(error) {
+                    showToast("GPS access denied. Please choose your city manually.", "warning");
+                }
+            );
+        } else {
+            showToast("Geolocation is not supported by your browser.", "warning");
+        }
+    }
+    </script>
+
+<div style="background: #FAF8F2; min-height: 85vh; padding: 40px 0 80px;">
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1 style="font-family: 'Playfair Display', serif; font-size: 32px; color: var(--primary-green); margin: 0 0 6px;">
+                    Our Master Menu 🍽️
+                </h1>
+                <p style="color: #666; margin: 0; font-size: 14px;">
+                    Authentic dum biryanis, chargrilled tandoori kebabs, rich gravies, and artisan beverages
+                </p>
+            </div>
+
+            <!-- Veg Only Toggle -->
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; background: #fff; padding: 8px 16px; border-radius: 20px; border: 1px solid var(--light-border);">
+                <input type="checkbox" id="vegToggle" onchange="toggleVeg(this.checked)" style="width: 18px; height: 18px; accent-color: #16A34A;">
+                <span>Pure Veg Only 🥬</span>
+            </label>
+        </div>
+
+        <!-- Category Pills Filter Bar -->
+        <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 24px; scrollbar-width: none;">
+            <a href="menu.php" style="padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; background: var(--primary-green); color: #FFFFFF; border: 1px solid var(--light-border);">
+                All Dishes
+            </a>
+                            <a href="menu.php?category=biryani" 
+                   style="padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; background: #FFFFFF; color: #333; border: 1px solid var(--light-border);">
+                    Biryani                </a>
+                            <a href="menu.php?category=kebabs" 
+                   style="padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; background: #FFFFFF; color: #333; border: 1px solid var(--light-border);">
+                    Kebabs &amp; Starters                </a>
+                            <a href="menu.php?category=rotis" 
+                   style="padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; background: #FFFFFF; color: #333; border: 1px solid var(--light-border);">
+                    Rotis &amp; Breads                </a>
+                            <a href="menu.php?category=mojitos" 
+                   style="padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; background: #FFFFFF; color: #333; border: 1px solid var(--light-border);">
+                    Mojitos &amp; Coolers                </a>
+                            <a href="menu.php?category=milkshakes" 
+                   style="padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; background: #FFFFFF; color: #333; border: 1px solid var(--light-border);">
+                    Milkshakes &amp; Sweets                </a>
+                            <a href="menu.php?category=juices" 
+                   style="padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; background: #FFFFFF; color: #333; border: 1px solid var(--light-border);">
+                    Fresh Juices                </a>
+                    </div>
+
+        <!-- Menu Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;">
+                        <div class="master-menu-card" data-is-veg="1" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/roti.png" alt="Amritsari Kulcha with Chole" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Rotis &amp; Breads                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Amritsari Kulcha with Chole                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Crispy stuffed potato and spice bread served with spiced Punjabi chickpeas and pickled onions.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹159.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹180.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(12)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="0" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/biryani.png" alt="Butter Chicken Supreme" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="non-veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Rotis &amp; Breads                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Butter Chicken Supreme                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Charcoal-grilled chicken tikka simmered in a velvety, silky smooth tomato, cashew butter and dried fenugreek gravy.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹299.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹320.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(6)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="1" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/roti.png" alt="Butter Garlic Naan" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Rotis &amp; Breads                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Butter Garlic Naan                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Refined flour flatbread leavened and charred in tandoor, topped with minced garlic and generous salted butter.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹55.00                        </span>
+                                            </div>
+
+                    <button onclick="addToCart(7)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="0" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/kabab.png" alt="Chicken Malai Tikka" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="non-veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Kebabs &amp; Starters                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Chicken Malai Tikka                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Tender boneless chicken morsels steeped in cream, cheese, cardamom, and green chilies, glazed with melted butter.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹249.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹270.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(14)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="1" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/kabab.png" alt="Dahi Ke Kebab (Veg)" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Kebabs &amp; Starters                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Dahi Ke Kebab (Veg)                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Golden crisp hung curd patties stuffed with crunchy bell peppers, fresh mint, and toasted pine nuts.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹199.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹220.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(15)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="1" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/roti.png" alt="Dal Makhani Heritage" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Rotis &amp; Breads                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Dal Makhani Heritage                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Black lentils slow cooked overnight on charcoal embers with butter, cream, and subtle garlic aroma.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹189.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹210.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(11)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="1" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/mojitos.png" alt="Emerald Mint Mojito" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Mojitos &amp; Coolers                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Emerald Mint Mojito                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Crisp fresh mint leaves muddled with Persian lime, organic cane sugar, sparkling soda and cracked ice.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹99.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹120.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(8)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="0" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/kabab.png" alt="Galouti Kebab Platter (4 Pcs)" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="non-veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Kebabs &amp; Starters                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Galouti Kebab Platter (4 Pcs)                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Melt-in-mouth smoked minced meat patties infused with rose water and exotic royal spices. Served on mini parathas.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹269.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹290.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(4)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="0" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/biryani.png" alt="Hyderabadi Mutton Dum Biryani" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="non-veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Biryani                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Hyderabadi Mutton Dum Biryani                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Slow cooked tender mutton chunks infused with 32 secret spices, sealed in dough for maximum aroma and richness.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹349.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹380.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(2)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="0" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/biryani.png" alt="Kolkata Style Chicken Biryani" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="non-veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Biryani                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Kolkata Style Chicken Biryani                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Aromatic light biryani layered with succulent chicken, spiced golden potato, and a hard-boiled egg.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹229.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹250.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(16)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="1" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/roti.png" alt="Paneer Tikka Butter Masala" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Rotis &amp; Breads                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Paneer Tikka Butter Masala                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Charcoal-grilled cottage cheese tikka tossed in an aromatic, rich, cream-laced onion-tomato gravy.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹230.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹260.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(10)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="1" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/roti.png" alt="Royal Maharaja Pure Veg Thali" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Rotis &amp; Breads                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Royal Maharaja Pure Veg Thali                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Paneer curry, Dal Makhani, Seasonal Subzi, Jeera Rice, 2 Butter Rotis, Gulab Jamun, Salad &amp; Papad.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹279.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹299.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(13)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="1" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/milkshakes.png" alt="Royal Mango Kesar Shake" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Milkshakes &amp; Sweets                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Royal Mango Kesar Shake                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Rich Alphonso mango pulp blended with whole milk, saffron strands and pistachio slivers.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹120.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹140.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(9)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="1" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/biryani.png" alt="Shahi Paneer Dum Biryani" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Biryani                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Shahi Paneer Dum Biryani                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Golden cottage cheese cubes marinated in saffron yogurt, layered with long grain basmati rice and fresh mint.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹219.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹240.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(3)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="0" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/biryani.png" alt="Zaykaa Special Chicken Dum Biryani" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="non-veg-icon"></span>
+                        </div>
+                                                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(217, 119, 6, 0.95); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                                ★ BESTSELLER
+                            </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Biryani                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Zaykaa Special Chicken Dum Biryani                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Fragrant basmati rice layered with succulent marinated chicken, saffron, browned onions and whole spices. Served with creamy mirchi ka salan and burani raita.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹249.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹280.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(1)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                        <div class="master-menu-card" data-is-veg="0" 
+                 style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm); transition: transform 0.2s;">
+                <div>
+                    <div style="position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: #FAF8F2; margin-bottom: 12px;">
+                        <img src="assets/images/categories/kabab.png" alt="Tandoori Murgh (Half)" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 10px; left: 10px;">
+                            <span class="non-veg-icon"></span>
+                        </div>
+                                            </div>
+
+                    <div style="font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase;">
+                        Kebabs &amp; Starters                    </div>
+                    
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; margin: 4px 0 6px; color: var(--dark-text);">
+                        Tandoori Murgh (Half)                    </h3>
+
+                    <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Tender chicken marinated overnight in Kashmiri red chili, mustard oil, hung curd, and roasted in clay oven.                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--light-border);">
+                    <div>
+                        <span style="font-size: 18px; font-weight: 700; color: var(--primary-green);">
+                            ₹239.00                        </span>
+                                                    <span style="font-size: 12px; text-decoration: line-through; color: #999; margin-left: 4px;">
+                                ₹260.00                            </span>
+                                            </div>
+
+                    <button onclick="addToCart(5)" 
+                            style="padding: 8px 18px; background: var(--primary-green); color: #fff; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                        + ADD
+                    </button>
+                </div>
+            </div>
+                    </div>
+    </div>
+</div>
+
+<script>
+function toggleVeg(isVeg) {
+    document.querySelectorAll('.master-menu-card').forEach(card => {
+        if (isVeg && card.getAttribute('data-is-veg') === '0') {
+            card.style.display = 'none';
+        } else {
+            card.style.display = 'flex';
+        }
+    });
+}
+</script>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <div class="mobile-bottom-bar">
+        <a href="index.php" class="bottom-nav-link ">
+            <span style="font-size: 18px;">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="menu.php" class="bottom-nav-link active">
+            <span style="font-size: 18px;">🍽️</span>
+            <span>Menu</span>
+        </a>
+        <a href="cart.php" class="bottom-nav-link " style="position: relative;">
+            <span style="font-size: 18px;">🛒</span>
+            <span class="cart-count-badge" style="display: none; position: absolute; top: -4px; right: 8px; background: #DC2626; color: #fff; font-size: 10px; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">0</span>
+            <span>Cart</span>
+        </a>
+        <a href="orders.php" class="bottom-nav-link ">
+            <span style="font-size: 18px;">📦</span>
+            <span>Orders</span>
+        </a>
+        <a href="login.php" class="bottom-nav-link ">
+            <span style="font-size: 18px;">👤</span>
+            <span>Profile</span>
+        </a>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                    </div>
+                    <p>Mahuda More, Dhanbad,<br>Jharkhand – 828305</p>
+                </div>
+                
+                <div class="footer-section">
+                    <div class="footer-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                    </div>
+                    <p>+91 96935 17942</p>
+                </div>
+                
+                <div class="footer-section">
+                    <div class="footer-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                    </div>
+                    <p>info@zaykaa.com</p>
+                </div>
+                
+                <div class="footer-section">
+                    <div class="social-icons">
+                        <a href="#" class="social-icon" aria-label="Facebook">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-icon" aria-label="Instagram">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-icon" aria-label="WhatsApp">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-10.826 9.318c-2.59 0-5.028-.749-6.885-2.036l-4.925 1.429 1.317-4.795c-1.435-1.937-2.286-4.336-2.286-6.913 0-6.577 5.346-11.923 11.923-11.923s11.923 5.346 11.923 11.923-5.346 11.923-11.923 11.923"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Partner Links Bar -->
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; font-size: 13px; color: rgba(255,255,255,0.8);">
+                <a href="restaurant/login.php" style="color: var(--light-gold);">🍳 Partner with us (Restaurant Login)</a>
+                <a href="delivery/login.php" style="color: var(--light-gold);">🛵 Ride with us (Delivery Partner)</a>
+                <a href="admin/login.php" style="color: var(--light-gold);">⚡ Admin Control Center</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Copyright Bar -->
+    <div class="copyright">
+        <div class="container">
+            <p>© 2026 Zaykaa Café & Restaurant Platform. All Rights Reserved.</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/script.js"></script>
+    <script src="assets/js/zayka-app.js"></script>
+</body>
+</html>
