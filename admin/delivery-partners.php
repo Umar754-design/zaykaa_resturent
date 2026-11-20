@@ -14,8 +14,9 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     $rId = (int)$_GET['id'];
 
     if ($act === 'approve_kyc') {
-        $pdo->prepare("UPDATE delivery_partners SET kyc_status = 'approved' WHERE id = ?")->execute([$rId]);
-        set_flash('success', 'Rider KYC approved successfully!');
+        // Approval now happens on the document review page
+        header("Location: rider-kyc.php?id=" . $rId);
+        exit;
     } elseif ($act === 'reject_kyc') {
         $pdo->prepare("UPDATE delivery_partners SET kyc_status = 'rejected', is_online = 0 WHERE id = ?")->execute([$rId]);
         set_flash('error', 'Rider KYC rejected.');
@@ -41,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'revie
     header("Location: delivery-partners.php#shiftSelfies");
     exit;
 }
+
+require_once __DIR__ . '/../includes/rider-kyc.php';
+ensure_rider_kyc_schema();
 
 include 'includes/admin-header.php';
 
@@ -160,10 +164,13 @@ $riders = $pdo->query("SELECT dp.*, u.name, u.email, u.phone, u.status as user_s
                                 <td>
                                     <div style="display: flex; gap: 6px;">
                                         <?php if ($rd['kyc_status'] !== 'approved'): ?>
-                                            <a href="delivery-partners.php?action=approve_kyc&id=<?php echo (int) $rd['id']; ?>&<?php echo csrf_query(); ?>" style="padding: 4px 10px; background: #DEF7EC; color: #046C4E; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none;">
-                                                Approve KYC
+                                            <a href="rider-kyc.php?id=<?php echo (int) $rd['id']; ?>" style="padding: 4px 10px; background: #DEF7EC; color: #046C4E; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none;">
+                                                Review KYC<?php echo !empty($rd['kyc_submitted_at']) ? ' 📄' : ''; ?>
                                             </a>
                                         <?php else: ?>
+                                            <a href="rider-kyc.php?id=<?php echo (int) $rd['id']; ?>" style="padding: 4px 10px; background: #EFF6FF; color: #1D4ED8; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none;">
+                                                Documents
+                                            </a>
                                             <a href="delivery-partners.php?action=reject_kyc&id=<?php echo (int) $rd['id']; ?>&<?php echo csrf_query(); ?>" style="padding: 4px 10px; background: #FDE8E8; color: #9B1C1C; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none;">
                                                 Revoke
                                             </a>

@@ -2479,3 +2479,57 @@ p {
     font-style: italic;
 }
 
+
+/* ===================================================
+   ADD -> quantity stepper (Zomato/Swiggy style)
+   =================================================== */
+button[data-add-item][hidden],
+.qty-stepper[hidden] { display: none !important; }
+
+.qty-stepper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 92px;
+    height: 36px;
+    border-radius: 20px;
+    background: var(--primary-green, #063F2B);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    user-select: none;
+    transition: opacity 0.15s;
+}
+.qty-stepper.busy { opacity: 0.6; pointer-events: none; }
+.qty-stepper-btn {
+    width: 34px;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+.qty-stepper-btn:hover { background: rgba(255, 255, 255, 0.12); }
+.qty-stepper-val {
+    flex: 1;
+    text-align: center;
+    font-weight: 800;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Small round "+" on homepage rail cards becomes a compact pill in the same corner */
+.qty-stepper-compact {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 2;
+    min-width: 0;
+    height: 32px;
+    border-radius: 16px;
+}
+.qty-stepper-compact .qty-stepper-btn { width: 28px; font-size: 18px; }
+.qty-stepper-compact .qty-stepper-val { min-width: 18px; font-size: 13px; }

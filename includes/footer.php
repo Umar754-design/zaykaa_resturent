@@ -109,6 +109,6 @@
 
     <!-- Scripts -->
     <script src="assets/js/script.js?v=mobile-fix-2"></script>
-    <script src="assets/js/zayka-app.js?v=mobile-fix-2"></script>
+    <script src="assets/js/zayka-app.js?v=cart-stepper-1"></script>
 </body>
 </html>

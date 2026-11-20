@@ -34,3 +34,6 @@ Thumbs.db
 .env
 uploads/riders/*
 !uploads/riders/.gitkeep
+
+# Rider KYC documents (private)
+storage/kyc/

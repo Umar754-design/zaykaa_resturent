@@ -5,7 +5,7 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
     # Block dev/internal folders and VCS metadata
-    RewriteRule ^(scratch|database|config|node_modules|\.git|\.claude)(/|$) - [F,L,NC]
+    RewriteRule ^(scratch|database|config|storage|node_modules|\.git|\.claude)(/|$) - [F,L,NC]
 </IfModule>
 
 # Block secrets, dumps, and project tooling files

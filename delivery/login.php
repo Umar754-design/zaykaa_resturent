@@ -27,6 +27,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'cancel_login') {
     exit;
 }
 
+if (isset($_GET['action']) && $_GET['action'] === 'cancel_kyc') {
+    unset($_SESSION['rider_kyc_user_id']);
+    set_flash('success', 'Your KYC progress is saved. Sign in any time to finish it.');
+    header("Location: login.php");
+    exit;
+}
+
 $error = '';
 $success = '';
 
@@ -79,10 +86,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         if (!$rider) {
             $error = 'Rider profile not found for this account. Please register first.';
+        } elseif ($rider['kyc_status'] === 'rejected' || ($rider['kyc_status'] === 'pending' && empty($rider['kyc_submitted_at']))) {
+            // Documents still needed (or need fixing): continue onboarding step 2
+            login_clear_failures('delivery', $email);
+            login_session_regenerate();
+            $_SESSION['rider_kyc_user_id'] = (int) $user['id'];
+            header("Location: kyc-documents.php");
+            exit;
         } elseif ($rider['kyc_status'] === 'pending') {
-            $error = '⏳ KYC Verification Pending: Your rider account has not been approved by operations yet. Once approved, you can login with your live shift selfie.';
-        } elseif ($rider['kyc_status'] === 'rejected') {
-            $error = '❌ Account Rejected: Your KYC application was rejected by operations. Please contact Fleet Support.';
+            $error = '⏳ KYC Verification Pending: Your documents were submitted and are being verified. Once approved, you can login with your live shift selfie.';
         } elseif ($rider['kyc_status'] === 'approved') {
             // Check if rider has a valid registered KYC photo on file
             $kycPhoto = $rider['selfie_image'] ?? '';

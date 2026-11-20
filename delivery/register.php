@@ -89,10 +89,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $dpStmt->execute([$userId, $vehicleType, $vehicleNumber, $drivingLicense, $selfiePath]);
 
                     $pdo->commit();
-                    $success = 'Your rider registration application has been submitted successfully! Your account is currently pending Admin KYC approval. Once approved, you can login with your live shift selfie and start delivering.';
+
+                    // Step 2: KYC documents
+                    login_session_regenerate();
+                    $_SESSION['rider_kyc_user_id'] = (int) $userId;
+                    set_flash('success', '✓ Account created! Now upload your KYC documents to finish registration.');
+                    header('Location: kyc-documents.php');
+                    exit;
                 } catch (Exception $e) {
                     $pdo->rollBack();
-                    $error = 'Registration failed due to a database error: ' . $e->getMessage();
+                    error_log('Rider registration failed: ' . $e->getMessage());
+                    $error = 'Registration failed due to a server error. Please try again.';
                 }
             }
         }

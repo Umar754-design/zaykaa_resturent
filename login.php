@@ -53,7 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $dpStmt->execute([$user['id']]);
                     $rider = $dpStmt->fetch();
 
-                    if (!$rider || $rider['kyc_status'] === 'pending') {
+                    if ($rider && ($rider['kyc_status'] === 'rejected' || ($rider['kyc_status'] === 'pending' && empty($rider['kyc_submitted_at'])))) {
+                        unset($_SESSION['user_id'], $_SESSION['user_role'], $_SESSION['user_name']);
+                        $_SESSION['rider_kyc_user_id'] = (int) $user['id'];
+                        header("Location: delivery/kyc-documents.php");
+                        exit;
+                    } elseif (!$rider || $rider['kyc_status'] === 'pending') {
                         unset($_SESSION['user_id'], $_SESSION['user_role'], $_SESSION['user_name']);
                         set_flash('error', '⏳ Your Rider KYC verification is pending Admin approval. Once approved, you can login with your live shift selfie.');
                         header("Location: delivery/login.php");

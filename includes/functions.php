@@ -311,6 +311,23 @@ function has_role($roles) {
 /**
  * Route protection guard
  */
+/**
+ * Absolute URL path inside this app, e.g. app_url('admin/login.php') -> /Zayka/admin/login.php
+ * (works whether the app lives at the web root or in a sub-folder).
+ */
+function app_url($path = '') {
+    static $base = null;
+    if ($base === null) {
+        $slash = chr(92); // backslash (Windows paths)
+        $docRoot = rtrim(str_replace($slash, '/', realpath($_SERVER['DOCUMENT_ROOT'] ?? '') ?: ''), '/');
+        $appRoot = str_replace($slash, '/', realpath(dirname(__DIR__)));
+        $base = ($docRoot !== '' && stripos($appRoot, $docRoot) === 0) ? substr($appRoot, strlen($docRoot)) : '';
+        $base = '/' . trim($base, '/');
+        $base = $base === '/' ? '' : $base;
+    }
+    return $base . '/' . ltrim($path, '/');
+}
+
 function require_role($roles, $redirectUrl = null) {
     if (!is_logged_in()) {
         $loginUrl = ($redirectUrl) ? $redirectUrl : 'login.php';
@@ -322,7 +339,7 @@ function require_role($roles, $redirectUrl = null) {
             $loginUrl = 'admin/login.php';
         }
         set_flash('error', 'Please log in to continue.');
-        header("Location: " . $loginUrl);
+        header("Location: " . (preg_match('#^(https?:)?/#', $loginUrl) ? $loginUrl : app_url($loginUrl)));
         exit;
     }
 
@@ -331,7 +348,7 @@ function require_role($roles, $redirectUrl = null) {
         die("<div style='font-family:sans-serif;text-align:center;padding:60px;'>
             <h1>403 - Access Denied</h1>
             <p>You do not have permission to access this portal.</p>
-            <p><a href='/index.php'>Return to Homepage</a></p>
+            <p><a href='" . app_url('index.php') . "'>Return to Homepage</a></p>
         </div>");
     }
 }
