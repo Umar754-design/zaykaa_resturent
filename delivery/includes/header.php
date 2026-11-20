@@ -97,6 +97,8 @@ $page = basename($_SERVER['PHP_SELF']);
                     </span>
                 </label>
 
+                <span id="riderGpsPill" title="Live location sharing" style="display: none; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; background: rgba(255,255,255,0.08); color: #94A3B8;">📍 GPS</span>
+
                 <a href="../logout.php" style="color: #F87171; font-size: 13px; font-weight: 600; text-decoration: none;">Logout</a>
             </div>
         </div>
@@ -138,9 +140,66 @@ $page = basename($_SERVER['PHP_SELF']);
                         lbl.innerText = isOnline ? '● On Duty (Online)' : '○ Off Duty (Offline)';
                         lbl.style.color = isOnline ? '#10B981' : '#94A3B8';
                     }
+                    isOnline ? riderGps.start() : riderGps.stop();
                 } else {
                     showToast(data.message, 'error');
                 }
             });
     }
+
+    // ---- Live GPS sharing while On Duty (used for customer tracking) ----
+    const riderGps = (function () {
+        const SEND_EVERY_MS = 15000;
+        let watchId = null, lastSent = 0, warned = false;
+        const pill = () => document.getElementById('riderGpsPill');
+
+        function setPill(text, color) {
+            const p = pill();
+            if (!p) return;
+            p.style.display = 'inline-block';
+            p.textContent = text;
+            p.style.color = color;
+        }
+
+        function send(pos) {
+            const now = Date.now();
+            if (now - lastSent < SEND_EVERY_MS) return;
+            lastSent = now;
+            const fd = new FormData();
+            fd.append('type', 'rider_location');
+            fd.append('lat', pos.coords.latitude);
+            fd.append('lng', pos.coords.longitude);
+            fd.append('accuracy', pos.coords.accuracy || 0);
+            fetch('../api/toggle-status.php', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(d => setPill(d.success ? '📍 GPS live' : '📍 GPS paused', d.success ? '#10B981' : '#FBBF24'))
+                .catch(() => setPill('📍 GPS offline', '#F87171'));
+        }
+
+        function onError(err) {
+            setPill('📍 GPS off', '#F87171');
+            if (!warned) {
+                warned = true;
+                showToast('Please allow location access so customers can track their delivery.', 'warning');
+            }
+        }
+
+        return {
+            start() {
+                if (!('geolocation' in navigator) || watchId !== null) return;
+                setPill('📍 Locating…', '#94A3B8');
+                watchId = navigator.geolocation.watchPosition(send, onError, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+            },
+            stop() {
+                if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                const p = pill();
+                if (p) p.style.display = 'none';
+            }
+        };
+    })();
+
+    <?php if (!empty($rider['is_online']) && $user['role'] === 'delivery'): ?>
+    document.addEventListener('DOMContentLoaded', () => riderGps.start());
+    <?php endif; ?>
     </script>

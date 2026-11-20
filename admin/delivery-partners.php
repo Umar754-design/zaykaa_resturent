@@ -24,7 +24,33 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     exit;
 }
 
+// Shift selfie review (POST)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'review_selfie') {
+    $selfieId = (int) ($_POST['selfie_id'] ?? 0);
+    $decision = $_POST['decision'] ?? '';
+    if (in_array($decision, ['approved', 'flagged'], true)) {
+        rider_selfie_table()->prepare("UPDATE rider_shift_selfies SET review_status = ? WHERE id = ?")->execute([$decision, $selfieId]);
+        if ($decision === 'flagged') {
+            // Take the rider off duty until operations checks the identity
+            $pdo->prepare("UPDATE delivery_partners dp JOIN rider_shift_selfies s ON s.rider_id = dp.id SET dp.is_online = 0 WHERE s.id = ?")->execute([$selfieId]);
+            set_flash('error', 'Selfie flagged. Rider has been taken off duty.');
+        } else {
+            set_flash('success', 'Shift selfie marked as verified.');
+        }
+    }
+    header("Location: delivery-partners.php#shiftSelfies");
+    exit;
+}
+
 include 'includes/admin-header.php';
+
+$shiftSelfies = rider_selfie_table()->query("SELECT s.*, u.name, dp.selfie_image
+                       FROM rider_shift_selfies s
+                       JOIN delivery_partners dp ON dp.id = s.rider_id
+                       JOIN users u ON u.id = dp.user_id
+                       ORDER BY (s.review_status = 'pending') DESC, s.id DESC
+                       LIMIT 30")->fetchAll();
+$pendingSelfieCount = count(array_filter($shiftSelfies, fn($x) => $x['review_status'] === 'pending'));
 
 $riders = $pdo->query("SELECT dp.*, u.name, u.email, u.phone, u.status as user_status 
                        FROM delivery_partners dp 
@@ -156,6 +182,53 @@ $riders = $pdo->query("SELECT dp.*, u.name, u.email, u.phone, u.status as user_s
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- Shift selfie review -->
+        <div id="shiftSelfies" style="background: #FFFFFF; border-radius: 16px; border: 1px solid var(--light-border); padding: 24px; box-shadow: var(--shadow-sm); margin-top: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 6px;">
+                <h2 style="font-size: 18px; color: #0B192C; margin: 0;">Shift Selfie Review</h2>
+                <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: <?php echo $pendingSelfieCount ? '#FEF3C7' : '#DCFCE7'; ?>; color: <?php echo $pendingSelfieCount ? '#B45309' : '#15803D'; ?>;">
+                    <?php echo (int) $pendingSelfieCount; ?> pending
+                </span>
+            </div>
+            <p style="font-size: 13px; color: #64748B; margin: 0 0 16px;">
+                Face matching runs on the rider's phone, so compare each shift selfie with the KYC photo. Flagging takes the rider off duty.
+            </p>
+            <?php if (!$shiftSelfies): ?>
+                <p style="color: #94A3B8; font-size: 13px; margin: 0;">No shift selfies recorded yet.</p>
+            <?php else: ?>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px;">
+                <?php foreach ($shiftSelfies as $sf): ?>
+                    <div style="border: 1px solid <?php echo $sf['review_status'] === 'flagged' ? '#FCA5A5' : '#E2E8F0'; ?>; border-radius: 12px; padding: 12px;">
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <figure style="margin: 0; flex: 1; text-align: center;">
+                                <img src="../<?php echo e($sf['selfie_image']); ?>" alt="KYC photo" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; background: #F1F5F9;">
+                                <figcaption style="font-size: 10px; color: #64748B; margin-top: 2px;">KYC</figcaption>
+                            </figure>
+                            <figure style="margin: 0; flex: 1; text-align: center;">
+                                <img src="../<?php echo e($sf['image_path']); ?>" alt="Shift selfie" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; background: #F1F5F9;">
+                                <figcaption style="font-size: 10px; color: #64748B; margin-top: 2px;">Shift selfie</figcaption>
+                            </figure>
+                        </div>
+                        <div style="font-size: 13px; font-weight: 600; color: #0B192C;"><?php echo e($sf['name']); ?></div>
+                        <div style="font-size: 11px; color: #64748B; margin-bottom: 8px;">
+                            <?php echo e(date('d M, h:i A', strtotime($sf['created_at']))); ?> ·
+                            Phone match <?php echo (int) $sf['client_match_score']; ?>% ·
+                            <?php echo e(ucfirst($sf['review_status'])); ?>
+                        </div>
+                        <?php if ($sf['review_status'] === 'pending'): ?>
+                            <form method="POST" style="display: flex; gap: 6px; margin: 0;">
+                                <input type="hidden" name="action" value="review_selfie">
+                                <input type="hidden" name="selfie_id" value="<?php echo (int) $sf['id']; ?>">
+                                <button type="submit" name="decision" value="approved" class="btn" style="flex: 1; padding: 6px; font-size: 12px; background: #F0FDF4; color: #15803D;">✓ Same person</button>
+                                <button type="submit" name="decision" value="flagged" class="btn" style="flex: 1; padding: 6px; font-size: 12px; background: #FEF2F2; color: #DC2626;" onclick="return confirm('Flag this selfie and take the rider off duty?')">⚑ Flag</button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
         </div>
 
     </div>

@@ -224,8 +224,17 @@ switch ($action) {
                 $canUpdate = true;
             }
         } elseif ($user['role'] === 'delivery' && $order['rider_user_id'] == $user['id']) {
-            if (in_array($newStatus, ['picked_up', 'out_for_delivery', 'delivered'])) {
+            // Rider may only move the order forward one real step at a time
+            $riderTransitions = [
+                'ready_for_pickup' => ['picked_up'],
+                'picked_up'        => ['out_for_delivery', 'delivered'],
+                'out_for_delivery' => ['delivered'],
+            ];
+            $allowedNext = $riderTransitions[$order['order_status']] ?? [];
+            if (in_array($newStatus, $allowedNext, true)) {
                 $canUpdate = true;
+            } elseif ($newStatus === 'picked_up' && in_array($order['order_status'], ['accepted', 'preparing'], true)) {
+                json_response(['success' => false, 'message' => 'The kitchen has not marked this order ready yet. Please wait for "Ready for pickup".'], 409);
             }
         }
 
@@ -302,24 +311,53 @@ switch ($action) {
         }
 
         $orderId = (int)($_POST['order_id'] ?? 0);
-        $stmt = $pdo->prepare("SELECT id FROM delivery_partners WHERE user_id = ?");
+        $stmt = $pdo->prepare("SELECT id, kyc_status, is_online FROM delivery_partners WHERE user_id = ?");
         $stmt->execute([$user['id']]);
         $rider = $stmt->fetch();
 
         if (!$rider) {
             json_response(['success' => false, 'message' => 'Delivery profile not found.'], 404);
         }
-
-        $orderStmt = $pdo->prepare("SELECT * FROM orders WHERE id = ? AND delivery_partner_id IS NULL AND order_status IN ('accepted', 'preparing', 'ready_for_pickup')");
-        $orderStmt->execute([$orderId]);
-        $order = $orderStmt->fetch();
-
-        if (!$order) {
-            json_response(['success' => false, 'message' => 'Order is no longer available for assignment.'], 400);
+        if ($rider['kyc_status'] !== 'approved') {
+            json_response(['success' => false, 'message' => 'Your KYC is not approved yet.'], 403);
+        }
+        if (empty($rider['is_online']) || empty($_SESSION['rider_selfie_verified'])) {
+            json_response(['success' => false, 'message' => 'Go On Duty (Online) before accepting orders.'], 409);
         }
 
-        $upd = $pdo->prepare("UPDATE orders SET delivery_partner_id = ?, updated_at = NOW() WHERE id = ?");
-        $upd->execute([$rider['id'], $orderId]);
+        $pdo->beginTransaction();
+        try {
+            // Lock this rider's row so two taps can't grab two trips at once
+            $pdo->prepare("SELECT id FROM delivery_partners WHERE id = ? FOR UPDATE")->execute([$rider['id']]);
+            $busy = $pdo->prepare("SELECT order_number FROM orders WHERE delivery_partner_id = ?
+                                   AND order_status IN ('accepted', 'preparing', 'ready_for_pickup', 'picked_up', 'out_for_delivery') LIMIT 1");
+            $busy->execute([$rider['id']]);
+            if ($activeNo = $busy->fetchColumn()) {
+                $pdo->rollBack();
+                json_response(['success' => false, 'message' => "Finish your current trip (#{$activeNo}) before accepting another."], 409);
+            }
+
+            $orderStmt = $pdo->prepare("SELECT * FROM orders WHERE id = ?");
+            $orderStmt->execute([$orderId]);
+            $order = $orderStmt->fetch();
+
+            // Atomic claim: only succeeds if nobody else took it first
+            $upd = $pdo->prepare("UPDATE orders SET delivery_partner_id = ?, updated_at = NOW()
+                                  WHERE id = ? AND delivery_partner_id IS NULL
+                                    AND order_status IN ('accepted', 'preparing', 'ready_for_pickup')");
+            $upd->execute([$rider['id'], $orderId]);
+
+            if (!$order || $upd->rowCount() !== 1) {
+                $pdo->rollBack();
+                json_response(['success' => false, 'message' => 'Order is no longer available — another rider may have taken it.'], 409);
+            }
+            $pdo->commit();
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            json_response(['success' => false, 'message' => 'Could not accept the order. Please try again.'], 500);
+        }
 
         log_order_status($orderId, $order['order_status'], "Delivery partner {$user['name']} accepted the order assignment");
 
@@ -389,7 +427,8 @@ switch ($action) {
         $stmt->execute([$orderId]);
         $order = $stmt->fetch();
 
-        if (!$order) {
+        $viewer = order_viewer_role($order, $user);
+        if (!$order || !$viewer) {
             json_response(['success' => false, 'message' => 'Order not found.'], 404);
         }
 
@@ -404,7 +443,7 @@ switch ($action) {
                 'order_number' => $order['order_number'],
                 'status' => $order['order_status'],
                 'status_badge' => get_status_badge($order['order_status']),
-                'delivery_otp' => $order['delivery_otp'],
+                'delivery_otp' => in_array($viewer, ['customer', 'admin'], true) ? $order['delivery_otp'] : null,
                 'estimated_delivery_time' => $order['estimated_delivery_time'],
                 'restaurant' => [
                     'name' => $order['restaurant_name'],

@@ -48,6 +48,29 @@ switch ($type) {
         json_response(['success' => true, 'message' => 'Duty status updated to ' . ($isOnline ? 'Online' : 'Offline'), 'is_online' => $isOnline]);
         break;
 
+    case 'rider_location':
+        if ($user['role'] !== 'delivery' || empty($_SESSION['rider_selfie_verified'])) {
+            json_response(['success' => false, 'message' => 'Permission denied'], 403);
+        }
+        $lat = filter_var($_POST['lat'] ?? null, FILTER_VALIDATE_FLOAT);
+        $lng = filter_var($_POST['lng'] ?? null, FILTER_VALIDATE_FLOAT);
+        $accuracy = filter_var($_POST['accuracy'] ?? 0, FILTER_VALIDATE_FLOAT);
+        if ($lat === false || $lng === false || $lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
+            json_response(['success' => false, 'message' => 'Invalid coordinates'], 400);
+        }
+        if ($accuracy !== false && $accuracy > 500) {
+            json_response(['success' => false, 'message' => 'Location too inaccurate, ignored'], 422);
+        }
+        ensure_rider_location_column();
+        // Only on-duty riders are tracked; ignore updates more often than every 10 seconds
+        $stmt = $pdo->prepare("UPDATE delivery_partners
+                               SET current_lat = ?, current_lng = ?, location_updated_at = NOW()
+                               WHERE user_id = ? AND is_online = 1
+                                 AND (location_updated_at IS NULL OR location_updated_at < NOW() - INTERVAL 10 SECOND)");
+        $stmt->execute([round($lat, 7), round($lng, 7), $user['id']]);
+        json_response(['success' => true, 'updated' => $stmt->rowCount() === 1]);
+        break;
+
     case 'menu_item_availability':
         if (!in_array($user['role'], ['restaurant', 'admin'])) {
             json_response(['success' => false, 'message' => 'Permission denied'], 403);

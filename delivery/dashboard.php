@@ -139,10 +139,17 @@ $todayStats = $todayStmt->fetch();
                             </div>
                         </div>
 
-                        <button onclick="acceptOrderAssignment(<?php echo $ord['id']; ?>)" 
+                        <?php if ($activeOrder): ?>
+                            <button type="button" disabled
+                                    style="width: 100%; padding: 12px; background: #E2E8F0; color: #64748B; border-radius: 20px; font-weight: 700; font-size: 13px; border: none; cursor: not-allowed;">
+                                Finish your current trip first
+                            </button>
+                        <?php else: ?>
+                        <button onclick="acceptOrderAssignment(<?php echo (int) $ord['id']; ?>)" 
                                 style="width: 100%; padding: 12px; background: #059669; color: #fff; border-radius: 20px; font-weight: 700; font-size: 14px; border: none; cursor: pointer; box-shadow: var(--shadow-sm);">
                             Accept Delivery 🛵
                         </button>
+                        <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
                 </div>

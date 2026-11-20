@@ -130,11 +130,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $savedSelfiePath = null;
 
     // 1. Enforce Server-Side Biometric Security Challenge & Match Verification
-    if (empty($pending['challenge']) || $authChallenge !== $pending['challenge']) {
+    $challengeAge = time() - (int) ($pending['challenge_time'] ?? 0);
+    $selfieLockMinutes = login_lock_minutes('rider_selfie', (string) $pending['rider_id']);
+
+    if (empty($pending['challenge']) || !hash_equals((string) $pending['challenge'], $authChallenge) || $challengeAge > RIDER_SELFIE_CHALLENGE_TTL) {
         $error = 'Biometric security session expired or invalid. Please sign in with your email and password again.';
         unset($_SESSION['pending_rider_login']);
         $step = 'credentials';
+    } elseif ($selfieLockMinutes) {
+        unset($_SESSION['pending_rider_login']);
+        $error = 'Too many failed selfie attempts. ' . login_lock_message($selfieLockMinutes);
+        $step = 'credentials';
     } elseif ($faceVerified !== '1' || $matchDistance > 0.48) {
+        login_record_failure('rider_selfie', (string) $pending['rider_id']);
         $error = "⛔ Access Denied: Biometric face verification failed (Similarity: {$matchScore}%, Distance: {$matchDistance}). The live camera face does not match the registered KYC photo for {$pending['name']}. Only the exact verified person can login.";
         $step = 'selfie';
     } else {
@@ -143,32 +151,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             mkdir($uploadDir, 0777, true);
         }
 
-        // 2. Process base64 from live camera
-        if (!empty($currentSelfieBase64) && preg_match('/^data:image\/(\w+);base64,/', $currentSelfieBase64)) {
-            $base64Clean = substr($currentSelfieBase64, strpos($currentSelfieBase64, ',') + 1);
-            $decoded = base64_decode($base64Clean);
-            if ($decoded !== false) {
-                $filename = 'current_' . $pending['rider_id'] . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.jpg';
-                if (file_put_contents($uploadDir . '/' . $filename, $decoded)) {
-                    $savedSelfiePath = 'uploads/riders/' . $filename;
-                }
-            }
-        }
-
-        // 3. Process uploaded file fallback
-        if (!$savedSelfiePath && !empty($_FILES['current_selfie_file']['tmp_name']) && is_uploaded_file($_FILES['current_selfie_file']['tmp_name'])) {
-            $ext = strtolower(pathinfo($_FILES['current_selfie_file']['name'], PATHINFO_EXTENSION));
-            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-                $ext = 'jpg';
-            }
-            $filename = 'current_' . $pending['rider_id'] . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-            if (move_uploaded_file($_FILES['current_selfie_file']['tmp_name'], $uploadDir . '/' . $filename)) {
+        // 2. Live camera image only (file uploads are not accepted) — validated & re-encoded server-side
+        $selfieCheck = rider_validate_live_selfie($currentSelfieBase64, $pending);
+        if ($selfieCheck['ok']) {
+            $filename = 'current_' . (int) $pending['rider_id'] . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.jpg';
+            if (file_put_contents($uploadDir . '/' . $filename, $selfieCheck['jpeg'])) {
                 $savedSelfiePath = 'uploads/riders/' . $filename;
             }
+        } else {
+            login_record_failure('rider_selfie', (string) $pending['rider_id']);
         }
 
         if (!$savedSelfiePath) {
-            $error = 'Live shift selfie could not be saved. Please capture a clear photo of your face again.';
+            $error = $selfieCheck['error'] ?? 'Live shift selfie could not be saved. Please capture a clear photo of your face again.';
             $step = 'selfie';
         } else {
             // Update database with current verified shift selfie and mark rider online
@@ -178,6 +173,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 WHERE id = ?
             ");
             $updStmt->execute([$savedSelfiePath, $pending['rider_id']]);
+
+            // Audit trail: every shift selfie is kept for admin review (client-side match is not trusted alone)
+            rider_log_shift_selfie((int) $pending['rider_id'], $savedSelfiePath, $selfieCheck['hash'], $matchDistance, $matchScore);
+            login_clear_failures('rider_selfie', (string) $pending['rider_id']);
 
             // Complete Login Session
             login_session_regenerate();
@@ -334,7 +333,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <span id="aiBadgeSpinner" style="display: inline-block;">⏳</span>
             </div>
 
-            <form method="POST" enctype="multipart/form-data" id="selfieVerifyForm" onsubmit="return validateBeforeSubmit()">
+            <form method="POST" id="selfieVerifyForm" onsubmit="return validateBeforeSubmit()">
                 <input type="hidden" name="action" value="verify_current_selfie">
                 <input type="hidden" name="auth_challenge" value="<?php echo htmlspecialchars($pending['challenge']); ?>">
                 <input type="hidden" name="current_selfie_base64" id="currentSelfieBase64">
@@ -368,10 +367,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             🔄 Retake
                         </button>
 
-                        <label class="cam-btn" style="cursor: pointer;" id="lblUploadPhoto">
-                            📁 Upload Photo
-                            <input type="file" name="current_selfie_file" id="loginFileInput" accept="image/*" capture="user" style="display: none;" onchange="handleLoginFileSelect(this)">
-                        </label>
                     </div>
 
                     <!-- Real-Time Feedback Status -->
@@ -490,7 +485,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     btnSnap.style.display = 'inline-flex';
                     updateStatus('Look directly at camera inside the oval reticle and click "Snap Photo".', '#FBBF24');
                 } catch (err) {
-                    alert('Camera could not be accessed (' + err.message + '). Please use "Upload Photo".');
+                    updateStatus('⚠️ Camera access is required for the shift selfie. Please allow camera permission in your browser settings and try again.', '#F87171');
                 }
             }
 
@@ -541,45 +536,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 startLoginCamera();
             }
 
-            // Handle file upload fallback and run Biometric AI Comparison
-            function handleLoginFileSelect(input) {
-                if (input.files && input.files[0]) {
-                    const file = input.files[0];
-                    const reader = new FileReader();
-
-                    reader.onload = async function(e) {
-                        const previewImg = document.getElementById('loginPhotoPreview');
-                        const camBox = document.getElementById('loginCameraBox');
-                        const btnStart = document.getElementById('btnLoginStartCam');
-                        const btnSnap = document.getElementById('btnLoginSnap');
-                        const btnRetake = document.getElementById('btnLoginRetake');
-
-                        if (loginStream) {
-                            loginStream.getTracks().forEach(t => t.stop());
-                            loginStream = null;
-                        }
-
-                        camBox.style.display = 'none';
-                        btnSnap.style.display = 'none';
-                        btnStart.style.display = 'inline-flex';
-                        btnRetake.style.display = 'inline-flex';
-
-                        previewImg.src = e.target.result;
-                        previewImg.style.display = 'block';
-                        document.getElementById('currentSelfieBase64').value = e.target.result;
-
-                        // Run Biometric Face Verification
-                        await verifyFaceBiometrics(previewImg);
-                    };
-
-                    reader.readAsDataURL(file);
-                }
-            }
-
             // Reset verification state
             function resetVerification() {
                 document.getElementById('currentSelfieBase64').value = '';
-                document.getElementById('loginFileInput').value = '';
                 document.getElementById('faceVerifiedInput').value = '0';
                 document.getElementById('matchDistanceInput').value = '1.0';
                 document.getElementById('matchScoreInput').value = '0';

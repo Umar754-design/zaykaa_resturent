@@ -8,6 +8,8 @@ require_once __DIR__ . '/../includes/functions.php';
 
 header('Content-Type: application/json');
 
+ensure_rider_location_column();
+
 $orderId = (int)($_GET['order_id'] ?? 0);
 if (!$orderId) {
     json_response(['success' => false, 'message' => 'Order ID required'], 400);
@@ -16,7 +18,8 @@ if (!$orderId) {
 $stmt = $pdo->prepare("SELECT o.*, 
                               r.name as rest_name, r.address as rest_address, r.latitude as rest_lat, r.longitude as rest_lng, r.phone as rest_phone,
                               u.name as rider_name, u.phone as rider_phone, dp.vehicle_number, dp.vehicle_type, dp.rating as rider_rating,
-                              dp.current_lat as rider_base_lat, dp.current_lng as rider_base_lng
+                              dp.current_lat as rider_base_lat, dp.current_lng as rider_base_lng,
+                              (dp.location_updated_at IS NOT NULL AND dp.location_updated_at > NOW() - INTERVAL 2 MINUTE) as rider_gps_live
                        FROM orders o
                        JOIN restaurants r ON o.restaurant_id = r.id
                        LEFT JOIN delivery_partners dp ON o.delivery_partner_id = dp.id
@@ -25,7 +28,8 @@ $stmt = $pdo->prepare("SELECT o.*,
 $stmt->execute([$orderId]);
 $order = $stmt->fetch();
 
-if (!$order) {
+$viewer = order_viewer_role($order, current_user());
+if (!$order || !$viewer) {
     json_response(['success' => false, 'message' => 'Order not found'], 404);
 }
 
@@ -62,6 +66,12 @@ if (!empty($order['delivery_partner_id'])) {
         $riderLat = $destLat;
         $riderLng = $destLng;
     }
+
+    // Prefer the rider's real GPS position while they are actively on this trip
+    if (!empty($order['rider_gps_live']) && in_array($order['order_status'], ['picked_up', 'out_for_delivery'], true)) {
+        $riderLat = (float) $order['rider_base_lat'];
+        $riderLng = (float) $order['rider_base_lng'];
+    }
 }
 
 // Map stage progression
@@ -83,7 +93,8 @@ json_response([
     'status' => $order['order_status'],
     'status_badge' => get_status_badge($order['order_status']),
     'progress_percent' => $stageProgress[$order['order_status']] ?? 10,
-    'delivery_otp' => $order['delivery_otp'],
+    'delivery_otp' => in_array($viewer, ['customer', 'admin'], true) ? $order['delivery_otp'] : null,
+    'rider_gps_live' => !empty($order['rider_gps_live']),
     'estimated_delivery_time' => $order['estimated_delivery_time'],
     'restaurant' => [
         'name' => $order['rest_name'],
@@ -93,7 +104,7 @@ json_response([
         'lng' => $restLng
     ],
     'destination' => [
-        'address' => $dest['address_line'] . ', ' . ($dest['landmark'] ? $dest['landmark'] . ', ' : '') . $dest['city'],
+        'address' => ($dest['address_line'] ?? '') . ', ' . (!empty($dest['landmark']) ? $dest['landmark'] . ', ' : '') . ($dest['city'] ?? ''),
         'lat' => $destLat,
         'lng' => $destLng
     ],

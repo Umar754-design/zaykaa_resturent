@@ -130,6 +130,130 @@ function require_csrf_get() {
 }
 
 /**
+ * Rider shift-selfie checks.
+ * Face matching runs in the rider's browser, so the server cannot fully trust its result.
+ * These checks make replay/upload tricks harder and keep every selfie for admin review.
+ */
+define('RIDER_SELFIE_CHALLENGE_TTL', 300);      // seconds the selfie step stays valid
+define('RIDER_SELFIE_MAX_BYTES', 2 * 1024 * 1024);
+
+function rider_selfie_table() {
+    global $pdo;
+    static $ready = false;
+    if (!$ready) {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `rider_shift_selfies` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `rider_id` INT NOT NULL,
+            `image_path` VARCHAR(255) NOT NULL,
+            `image_hash` CHAR(64) NOT NULL,
+            `client_match_distance` DECIMAL(6,4) DEFAULT NULL,
+            `client_match_score` INT DEFAULT NULL,
+            `ip_address` VARCHAR(45) DEFAULT NULL,
+            `user_agent` VARCHAR(255) DEFAULT NULL,
+            `review_status` ENUM('pending','approved','flagged') NOT NULL DEFAULT 'pending',
+            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_rider` (`rider_id`, `created_at`),
+            INDEX `idx_hash` (`image_hash`)
+        ) ENGINE=InnoDB");
+        $ready = true;
+    }
+    return $pdo;
+}
+
+/**
+ * Validates a live-camera data URL. Returns ['ok'=>bool, 'error'=>string, 'jpeg'=>bytes, 'hash'=>sha256].
+ */
+function rider_validate_live_selfie($dataUrl, $pending) {
+    $fail = function ($msg) { return ['ok' => false, 'error' => $msg]; };
+
+    if (!is_string($dataUrl) || !preg_match('#^data:image/jpeg;base64,#', $dataUrl)) {
+        return $fail('Please take a live selfie with the camera. Photo uploads are not accepted.');
+    }
+    $bytes = base64_decode(substr($dataUrl, strpos($dataUrl, ',') + 1), true);
+    if ($bytes === false || strlen($bytes) < 8 * 1024 || strlen($bytes) > RIDER_SELFIE_MAX_BYTES) {
+        return $fail('Selfie image is invalid or too small. Please retake it in good light.');
+    }
+    $info = @getimagesizefromstring($bytes);
+    if (!$info || $info[2] !== IMAGETYPE_JPEG || $info[0] < 320 || $info[1] < 240) {
+        return $fail('Selfie image could not be read. Please retake it with the live camera.');
+    }
+
+    $hash = hash('sha256', $bytes);
+
+    // Reject the registered KYC photo itself or any previously used shift selfie (replay)
+    $kycPath = dirname(__DIR__) . '/' . ltrim((string) ($pending['selfie_image'] ?? ''), '/');
+    if (!empty($pending['selfie_image']) && is_file($kycPath) && hash_file('sha256', $kycPath) === $hash) {
+        return $fail('That is your registration photo. Please take a new live selfie.');
+    }
+    $dup = rider_selfie_table()->prepare("SELECT 1 FROM rider_shift_selfies WHERE image_hash = ? LIMIT 1");
+    $dup->execute([$hash]);
+    if ($dup->fetchColumn()) {
+        return $fail('This selfie was already used before. Please take a new live selfie.');
+    }
+
+    return ['ok' => true, 'jpeg' => $bytes, 'hash' => $hash];
+}
+
+function rider_log_shift_selfie($riderId, $path, $hash, $distance, $score) {
+    rider_selfie_table()->prepare("INSERT INTO rider_shift_selfies
+        (rider_id, image_path, image_hash, client_match_distance, client_match_score, ip_address, user_agent)
+        VALUES (?, ?, ?, ?, ?, ?, ?)")
+        ->execute([
+            $riderId, $path, $hash, $distance, $score,
+            $_SERVER['REMOTE_ADDR'] ?? null,
+            substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+        ]);
+}
+
+/**
+ * Who is the current user to this order? Returns 'admin', 'customer', 'restaurant', 'rider' or null.
+ * $order needs user_id, restaurant_id and delivery_partner_id.
+ */
+function order_viewer_role($order, $user) {
+    global $pdo;
+    if (!$user || !$order) {
+        return null;
+    }
+    if ($user['role'] === 'admin') {
+        return 'admin';
+    }
+    if ((int) $order['user_id'] === (int) $user['id']) {
+        return 'customer';
+    }
+    if ($user['role'] === 'restaurant') {
+        $s = $pdo->prepare("SELECT 1 FROM restaurants WHERE id = ? AND owner_id = ?");
+        $s->execute([$order['restaurant_id'], $user['id']]);
+        if ($s->fetchColumn()) {
+            return 'restaurant';
+        }
+    }
+    if ($user['role'] === 'delivery' && !empty($order['delivery_partner_id'])) {
+        $s = $pdo->prepare("SELECT 1 FROM delivery_partners WHERE id = ? AND user_id = ?");
+        $s->execute([$order['delivery_partner_id'], $user['id']]);
+        if ($s->fetchColumn()) {
+            return 'rider';
+        }
+    }
+    return null;
+}
+
+/**
+ * Ensures delivery_partners.location_updated_at exists (live GPS freshness).
+ */
+function ensure_rider_location_column() {
+    global $pdo;
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $has = $pdo->query("SHOW COLUMNS FROM `delivery_partners` LIKE 'location_updated_at'")->fetchColumn();
+    if (!$has) {
+        $pdo->exec("ALTER TABLE `delivery_partners` ADD COLUMN `location_updated_at` DATETIME DEFAULT NULL AFTER `current_lng`");
+    }
+    $done = true;
+}
+
+/**
  * HTML-escape helper for output.
  */
 function e($value) {

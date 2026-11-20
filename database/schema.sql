@@ -172,6 +172,7 @@ CREATE TABLE IF NOT EXISTS `delivery_partners` (
     `is_online` TINYINT(1) DEFAULT 1,
     `current_lat` DECIMAL(10,8) DEFAULT 23.795000,
     `current_lng` DECIMAL(11,8) DEFAULT 86.429000,
+    `location_updated_at` DATETIME DEFAULT NULL,
     `kyc_status` ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     `total_deliveries` INT DEFAULT 0,
     `rating` DECIMAL(3,2) DEFAULT 4.80,

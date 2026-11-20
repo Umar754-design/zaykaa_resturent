@@ -84,8 +84,12 @@ $dest = json_decode($order['delivery_address_json'], true);
                 <?php endforeach; ?>
             </div>
 
-            <?php if (in_array($order['order_status'], ['accepted', 'preparing', 'ready_for_pickup'])): ?>
-                <button onclick="confirmPickup(<?php echo $order['id']; ?>)" 
+            <?php if (in_array($order['order_status'], ['accepted', 'preparing'])): ?>
+                <div style="padding: 14px; background: #FEF3C7; color: #92400E; border-radius: 14px; font-weight: 600; font-size: 13px; text-align: center;">
+                    ⏳ Kitchen is preparing this order. Pickup unlocks when it is marked "Ready for pickup".
+                </div>
+            <?php elseif ($order['order_status'] === 'ready_for_pickup'): ?>
+                <button onclick="confirmPickup(<?php echo (int) $order['id']; ?>)" 
                         style="width: 100%; padding: 14px; background: #059669; color: #fff; border-radius: 25px; font-weight: 700; font-size: 15px; border: none; cursor: pointer; box-shadow: var(--shadow-sm);">
                     📦 Confirm Order Picked Up
                 </button>
@@ -211,6 +215,15 @@ function verifyAndCompleteDelivery(id) {
             }
         });
 }
+<?php if (in_array($order['order_status'], ['accepted', 'preparing'], true)): ?>
+// Waiting on the kitchen: check every 15s and unlock pickup as soon as it's ready
+setInterval(() => {
+    fetch('../api/orders.php?action=poll_status&order_id=<?php echo (int) $order['id']; ?>')
+        .then(r => r.json())
+        .then(d => { if (d.success && d.order && d.order.status !== <?php echo js_value($order['order_status']); ?>) window.location.reload(); })
+        .catch(() => {});
+}, 15000);
+<?php endif; ?>
 </script>
 
 <?php include 'includes/footer.php'; ?>
