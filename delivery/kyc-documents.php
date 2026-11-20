@@ -126,6 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
     if (!$errors && !$missing) {
         $pdo->prepare("UPDATE delivery_partners SET kyc_submitted_at = NOW(), kyc_status = 'pending', kyc_remarks = NULL WHERE id = ?")
             ->execute([$riderId]);
+        notify_admin('rider_kyc', "KYC documents submitted: {$rider['name']}",
+            ($rider['kyc_status'] === 'rejected' ? 'Re-submitted after rejection' : 'Ready for verification'), 'rider-kyc.php?id=' . $riderId);
         unset($_SESSION['rider_kyc_user_id']);
         set_flash('success', '✓ KYC documents submitted! Our team will verify them within 24–48 hours. You can log in once approved.');
         header('Location: login.php');

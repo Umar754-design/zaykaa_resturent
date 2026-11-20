@@ -352,3 +352,15 @@ CREATE TABLE IF NOT EXISTS `banners` (
     `sort_order` INT DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Admin notification bell (also auto-created by ensure_admin_notifications_table())
+CREATE TABLE IF NOT EXISTS `admin_notifications` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `type` VARCHAR(30) NOT NULL,
+    `title` VARCHAR(150) NOT NULL,
+    `message` VARCHAR(255) DEFAULT NULL,
+    `link` VARCHAR(255) DEFAULT NULL,
+    `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_unread` (`is_read`, `id`)
+) ENGINE=InnoDB;

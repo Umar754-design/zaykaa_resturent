@@ -254,6 +254,67 @@ function ensure_rider_location_column() {
 }
 
 /**
+ * Admin notifications (bell in the admin panel).
+ */
+function admin_notification_types() {
+    return [
+        'order_new'        => ['icon' => '🛒', 'label' => 'New order'],
+        'order_cancelled'  => ['icon' => '❌', 'label' => 'Order cancelled'],
+        'rider_registered' => ['icon' => '🛵', 'label' => 'Rider registration'],
+        'rider_kyc'        => ['icon' => '🪪', 'label' => 'Rider KYC submitted'],
+        'rider_selfie'     => ['icon' => '📸', 'label' => 'Shift selfie to check'],
+        'partner_registered' => ['icon' => '🍳', 'label' => 'Restaurant sign-up'],
+        'customer_new'     => ['icon' => '👤', 'label' => 'New customer'],
+        'support_ticket'   => ['icon' => '💬', 'label' => 'Support ticket'],
+        'contact_message'  => ['icon' => '📩', 'label' => 'Contact message'],
+        'payout_request'   => ['icon' => '💰', 'label' => 'Payout request'],
+        'review_low'       => ['icon' => '⭐', 'label' => 'Low rating'],
+    ];
+}
+
+function ensure_admin_notifications_table() {
+    global $pdo;
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `admin_notifications` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `type` VARCHAR(30) NOT NULL,
+        `title` VARCHAR(150) NOT NULL,
+        `message` VARCHAR(255) DEFAULT NULL,
+        `link` VARCHAR(255) DEFAULT NULL,
+        `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+        `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX `idx_unread` (`is_read`, `id`)
+    ) ENGINE=InnoDB");
+    $done = true;
+}
+
+/**
+ * Records an admin notification. Never throws — a failed notification must not break the user's action.
+ * $link is relative to the admin folder (e.g. 'orders.php').
+ */
+function notify_admin($type, $title, $message = '', $link = null) {
+    global $pdo;
+    try {
+        // CREATE TABLE would implicitly commit an open transaction, so only ensure outside one
+        if (!$pdo->inTransaction()) {
+            ensure_admin_notifications_table();
+        }
+        $pdo->prepare("INSERT INTO admin_notifications (type, title, message, link) VALUES (?, ?, ?, ?)")
+            ->execute([
+                substr((string) $type, 0, 30),
+                mb_substr((string) $title, 0, 150),
+                mb_substr((string) $message, 0, 255),
+                $link ? substr((string) $link, 0, 255) : null,
+            ]);
+    } catch (Throwable $e) {
+        error_log('notify_admin failed: ' . $e->getMessage());
+    }
+}
+
+/**
  * HTML-escape helper for output.
  */
 function e($value) {

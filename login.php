@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include 'includes/header.php';
 ?>
 
-<div style="background: #FAF8F2; min-height: 85vh; padding: 50px 0;">
+<div class="zk-band-page zk-band-tall" style="background: #FAF8F2; min-height: 85vh; padding: 50px 0;">
     <div class="container" style="max-width: 480px;">
         <div style="background: #FFFFFF; border-radius: 20px; border: 1px solid var(--light-border); padding: 36px; box-shadow: var(--shadow-sm);">
             

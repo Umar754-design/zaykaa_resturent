@@ -165,6 +165,10 @@ switch ($action) {
 
             $pdo->commit();
 
+            $orderTotal = $financials['total_amount'] ?? ($financials['total_payable'] ?? 0);
+            notify_admin('order_new', "New order #{$orderNumber}",
+                $user['name'] . ' · ' . format_price($orderTotal) . ' · ' . strtoupper($paymentMethod), 'orders.php');
+
             // Clear Cart
             $_SESSION['cart'] = [
                 'restaurant_id' => null,
@@ -298,6 +302,10 @@ switch ($action) {
             log_order_status($orderId, $newStatus, $notes ?: 'Status updated to ' . ucfirst(str_replace('_', ' ', $newStatus)));
 
             $pdo->commit();
+            if ($newStatus === 'cancelled' && $user['role'] !== 'admin') {
+                notify_admin('order_cancelled', "Order #{$order['order_number']} cancelled",
+                    'By ' . $user['role'] . ($notes ? ': ' . $notes : ''), 'orders.php');
+            }
             json_response(['success' => true, 'message' => 'Order status updated to ' . ucfirst(str_replace('_', ' ', $newStatus)) . '!']);
         } catch (Exception $e) {
             $pdo->rollBack();
@@ -403,6 +411,8 @@ switch ($action) {
 
             log_order_status($orderId, 'cancelled', "Order cancelled by {$user['role']}: $reason");
             $pdo->commit();
+            notify_admin('order_cancelled', "Order #{$order['order_number']} cancelled",
+                'By ' . $user['role'] . ': ' . $reason, 'orders.php');
 
             json_response(['success' => true, 'message' => 'Order cancelled successfully. Any payment made has been credited to your wallet.']);
         } catch (Exception $e) {

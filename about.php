@@ -7,14 +7,14 @@ require_once __DIR__ . '/includes/functions.php';
 include 'includes/header.php';
 ?>
 
-<div style="background: #FAF8F2; min-height: 85vh; padding: 50px 0 80px;">
+<div class="zk-band-page zk-band-tall" style="background: #FAF8F2; min-height: 85vh; padding: 50px 0 80px;">
     <div class="container" style="max-width: 900px;">
-        <div style="text-align: center; margin-bottom: 40px;">
+        <div class="zk-band-head" style="text-align: center; margin-bottom: 40px;">
             <span style="font-size: 42px;">🍃</span>
             <h1 style="font-family: 'Playfair Display', serif; font-size: 38px; color: var(--primary-green); margin: 10px 0 6px;">
                 About Zaykaa
             </h1>
-            <p style="font-size: 16px; color: var(--gold); font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">
+            <p class="zk-gold" style="font-size: 16px; color: var(--gold); font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">
                 Good Food, Good Mood
             </p>
         </div>

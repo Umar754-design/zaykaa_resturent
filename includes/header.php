@@ -17,7 +17,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css?v=cart-stepper-1">
+    <link rel="stylesheet" href="assets/css/style.css?v=band-3">
     <link rel="stylesheet" href="assets/css/responsive.css?v=mobile-fix-2">
     <?php foreach (($pageStyles ?? []) as $pageStyle): ?>
     <link rel="stylesheet" href="<?php echo e($pageStyle); ?>">

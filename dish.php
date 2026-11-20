@@ -505,7 +505,7 @@ include 'includes/header.php';
 }
 </style>
 
-<div class="dish-detail-wrap">
+<div class="dish-detail-wrap zk-band-page zk-band-short">
     <div class="container">
         
         <?php if (!$dish): ?>

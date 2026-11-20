@@ -89,6 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $dpStmt->execute([$userId, $vehicleType, $vehicleNumber, $drivingLicense, $selfiePath]);
 
                     $pdo->commit();
+                    notify_admin('rider_registered', "New rider registration: {$name}",
+                        "{$vehicleType} · {$vehicleNumber} · KYC documents pending", 'delivery-partners.php');
 
                     // Step 2: KYC documents
                     login_session_regenerate();

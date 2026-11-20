@@ -2533,3 +2533,88 @@ button[data-add-item][hidden],
 }
 .qty-stepper-compact .qty-stepper-btn { width: 28px; font-size: 18px; }
 .qty-stepper-compact .qty-stepper-val { min-width: 18px; font-size: 13px; }
+
+/* ===================================================
+   Green brand band (same look as the homepage hero) used across pages.
+   .zk-band-page  -> wrapper gets a green band at the top; content overlaps it
+   .zk-band-head  -> title block that sits on the band (text turns white)
+   .zk-band-hero  -> a block whose whole background becomes the band
+   =================================================== */
+:root {
+    --zk-band-bg:
+        radial-gradient(circle at 12% 18%, rgba(221, 187, 106, 0.16) 0 2px, transparent 3px) 0 0 / 34px 34px,
+        radial-gradient(ellipse at 85% 0%, rgba(221, 187, 106, 0.22), transparent 55%),
+        linear-gradient(180deg, var(--primary-green, #063F2B) 0%, var(--secondary-green, #0B5138) 100%);
+}
+
+.zk-band-page {
+    position: relative;
+    isolation: isolate;
+    --zk-band-h: 210px;
+}
+.zk-band-page::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: var(--zk-band-h);
+    background: var(--zk-band-bg);
+    border-radius: 0 0 28px 28px;
+    box-shadow: 0 10px 30px rgba(6, 63, 43, 0.18);
+    z-index: -1;
+}
+.zk-band-page.zk-band-tall { --zk-band-h: 260px; }
+.zk-band-page.zk-band-short { --zk-band-h: 150px; }
+
+.zk-band-head h1,
+h1.zk-band-head,
+.zk-band-head > span {
+    color: #FFFFFF !important;
+}
+.zk-band-head h1 { text-shadow: 0 2px 10px rgba(0, 0, 0, 0.12); }
+.zk-band-head p,
+h1.zk-band-head + p {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+.zk-band-head p strong { color: #FFFFFF; }
+.zk-band-head .zk-gold,
+.zk-band-head p.zk-gold { color: var(--light-gold, #DDBB6A) !important; }
+.zk-band-head > a[href],
+.zk-band-head > div > a[href] {
+    background: var(--gold, #C9A24D) !important;
+    color: var(--primary-green, #063F2B) !important;
+    font-weight: 700 !important;
+}
+
+/* Whole-block band (e.g. restaurant profile header) */
+.zk-band-hero {
+    background: var(--zk-band-bg) !important;
+    border-bottom: none !important;
+    border-radius: 0 0 28px 28px;
+    color: #FFFFFF;
+    box-shadow: 0 10px 30px rgba(6, 63, 43, 0.18);
+}
+.zk-band-hero h1 { color: #FFFFFF !important; }
+.zk-band-hero p { color: rgba(255, 255, 255, 0.8) !important; }
+
+/* Dish page breadcrumb sits on the band */
+.zk-band-page .dish-breadcrumb,
+.zk-band-page .dish-breadcrumb-sep { color: rgba(255, 255, 255, 0.7); }
+.zk-band-page .dish-breadcrumb a { color: #FFFFFF; }
+.zk-band-page .dish-breadcrumb a:hover { color: var(--light-gold, #DDBB6A); }
+
+@media (min-width: 992px) {
+    .zk-band-page { --zk-band-h: 230px; }
+    .zk-band-page::before,
+    .zk-band-hero { border-radius: 0 0 44px 44px; }
+    .zk-band-page.zk-band-tall { --zk-band-h: 280px; }
+    .zk-band-page.zk-band-short { --zk-band-h: 170px; }
+}
+
+/* Dark green cards that sit on the band get a gold edge so they don't blend in */
+.zk-band-page [style*="linear-gradient(135deg, #063F2B"],
+.zk-band-page [style*="background: var(--primary-green)"][style*="border-radius"] {
+    border: 1px solid rgba(221, 187, 106, 0.55);
+    box-shadow: 0 14px 34px rgba(4, 30, 20, 0.35) !important;
+}

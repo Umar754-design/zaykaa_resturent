@@ -62,10 +62,10 @@ $searchResults = $stmt->fetchAll();
 $cats = $pdo->query("SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
 ?>
 
-<div style="background: #FAF8F2; min-height: 85vh; padding: 40px 0 80px;">
+<div class="zk-band-page" style="background: #FAF8F2; min-height: 85vh; padding: 40px 0 80px;">
     <div class="container">
         <!-- Search Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 24px;">
+        <div class="zk-band-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 24px;">
             <div>
                 <h1 style="font-family: 'Playfair Display', serif; font-size: 32px; color: var(--primary-green); margin: 0 0 6px;">
                     <?php if ($query): ?>

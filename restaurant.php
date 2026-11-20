@@ -64,7 +64,7 @@ $reviews = $revStmt->fetchAll();
 ?>
 
 <!-- Restaurant Hero Banner -->
-<div style="background: #FAF8F2; border-bottom: 1px solid var(--light-border); padding: 30px 0;">
+<div class="zk-band-hero" style="background: #FAF8F2; border-bottom: 1px solid var(--light-border); padding: 30px 0;">
     <div class="container">
         <div class="restaurant-hero-wrap" style="display: flex; flex-wrap: wrap; gap: 30px; align-items: center;">
             <div class="rest-hero-logo-wrap" style="width: 140px; height: 140px; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-md); border: 3px solid #fff; flex-shrink: 0; background: #fff;">

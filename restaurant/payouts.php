@@ -28,6 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_payout'])) {
     if ($amount > 500 && $bankInfo) {
         $ins = $pdo->prepare("INSERT INTO payouts (entity_type, entity_id, amount, status, notes) VALUES ('restaurant', ?, ?, 'pending', ?)");
         $ins->execute([$restId, $amount, "Bank Details: $bankInfo"]);
+        notify_admin('payout_request', 'Payout request: ' . format_price($amount),
+            ($currentRestaurant['name'] ?? 'Restaurant') . ' requested a payout', 'finance.php');
         set_flash('success', 'Payout request of ' . format_price($amount) . ' submitted to platform finance team.');
         header("Location: payouts.php");
         exit;

@@ -10,5 +10,6 @@
     </footer>
 
     <script src="../assets/js/zayka-app.js"></script>
+    <script src="../assets/js/admin-notifications.js?v=1"></script>
 </body>
 </html>

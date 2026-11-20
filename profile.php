@@ -35,9 +35,9 @@ $addresses = $addrStmt->fetchAll();
 include 'includes/header.php';
 ?>
 
-<div style="background: #FAF8F2; min-height: 85vh; padding: 40px 0 80px;">
+<div class="zk-band-page" style="background: #FAF8F2; min-height: 85vh; padding: 40px 0 80px;">
     <div class="container" style="max-width: 850px;">
-        <h1 style="font-family: 'Playfair Display', serif; font-size: 32px; color: var(--primary-green); margin: 0 0 24px;">
+        <h1 class="zk-band-head" style="font-family: 'Playfair Display', serif; font-size: 32px; color: var(--primary-green); margin: 0 0 24px;">
             Profile & Account Settings ⚙️
         </h1>
 

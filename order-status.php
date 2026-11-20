@@ -44,11 +44,11 @@ include 'includes/header.php';
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-<div style="background: #FAF8F2; min-height: 85vh; padding: 40px 0 80px;">
+<div class="zk-band-page" style="background: #FAF8F2; min-height: 85vh; padding: 40px 0 80px;">
     <div class="container">
         
         <!-- Header Banner -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 24px;">
+        <div class="zk-band-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 24px;">
             <div>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <h1 style="font-family: 'Playfair Display', serif; font-size: 28px; color: var(--primary-green); margin: 0;">

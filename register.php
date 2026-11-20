@@ -117,6 +117,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     $pdo->commit();
+                    if ($role === 'delivery') {
+                        notify_admin('rider_registered', "New rider registration: {$name}", 'KYC documents pending', 'delivery-partners.php');
+                    } elseif ($role === 'restaurant') {
+                        notify_admin('partner_registered', "New restaurant partner: {$name}", 'Review the restaurant profile', 'restaurants.php');
+                    } else {
+                        notify_admin('customer_new', "New customer: {$name}", $email, 'customers.php');
+                    }
 
                     // Role-based post registration behavior
                     if ($role === 'delivery') {
@@ -220,7 +227,7 @@ include 'includes/header.php';
 }
 </style>
 
-<div style="background: #FAF8F2; min-height: 85vh; padding: 50px 0;">
+<div class="zk-band-page zk-band-tall" style="background: #FAF8F2; min-height: 85vh; padding: 50px 0;">
     <div class="container" style="max-width: 540px;">
         <div style="background: #FFFFFF; border-radius: 20px; border: 1px solid var(--light-border); padding: 36px; box-shadow: var(--shadow-sm);">
             

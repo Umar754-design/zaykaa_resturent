@@ -46,6 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $ins->execute([$orderId, $user['id'], $order['restaurant_id'], $order['delivery_partner_id'], $restRating, $restReview, $foodRating, $deliveryRating, $deliveryReview]);
     }
+    if (min($restRating, $foodRating, $deliveryRating) <= 2) {
+        notify_admin('review_low', "Low rating on order #{$order['order_number']}",
+            "Restaurant {$restRating}★ · Food {$foodRating}★ · Delivery {$deliveryRating}★" . ($restReview ? ' — ' . $restReview : ''), 'orders.php');
+    }
 
     // Recalculate restaurant rating
     $calcStmt = $pdo->prepare("SELECT AVG(restaurant_rating) as avg_r, COUNT(*) as cnt FROM reviews WHERE restaurant_id = ?");
@@ -62,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include 'includes/header.php';
 ?>
 
-<div style="background: #FAF8F2; min-height: 85vh; padding: 50px 0;">
+<div class="zk-band-page zk-band-tall" style="background: #FAF8F2; min-height: 85vh; padding: 50px 0;">
     <div class="container" style="max-width: 650px;">
         <div style="background: #fff; border-radius: 18px; border: 1px solid var(--light-border); padding: 36px; box-shadow: var(--shadow-sm);">
             <div style="text-align: center; margin-bottom: 24px;">

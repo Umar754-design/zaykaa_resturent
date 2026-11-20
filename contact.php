@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("INSERT INTO support_tickets (ticket_number, user_id, role, subject, message, status, priority) 
                                VALUES (?, ?, 'customer', ?, ?, 'open', 'low')");
         $stmt->execute([$ticketNum, $uId, "Contact Message from $name: $subject", "Email: $email\n\n$message"]);
+        notify_admin('contact_message', "Contact message from {$name}", $subject, 'support.php');
         $success = true;
     }
 }
@@ -26,9 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include 'includes/header.php';
 ?>
 
-<div style="background: #FAF8F2; min-height: 85vh; padding: 50px 0 80px;">
+<div class="zk-band-page" style="background: #FAF8F2; min-height: 85vh; padding: 50px 0 80px;">
     <div class="container" style="max-width: 900px;">
-        <div style="text-align: center; margin-bottom: 36px;">
+        <div class="zk-band-head" style="text-align: center; margin-bottom: 36px;">
             <h1 style="font-family: 'Playfair Display', serif; font-size: 36px; color: var(--primary-green); margin: 0 0 6px;">
                 Contact Zaykaa
             </h1>

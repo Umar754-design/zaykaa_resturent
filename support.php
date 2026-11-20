@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_ticket'])) {
         $ins = $pdo->prepare("INSERT INTO support_tickets (ticket_number, user_id, role, order_id, subject, message, status, priority) 
                               VALUES (?, ?, 'customer', ?, ?, ?, 'open', 'medium')");
         $ins->execute([$ticketNum, $user['id'], $orderId, $subject, $message]);
+        notify_admin('support_ticket', "New support ticket {$ticketNum}", $user['name'] . ': ' . $subject, 'support.php');
         set_flash('success', "Ticket {$ticketNum} created! Our support team will respond shortly.");
         header("Location: support.php");
         exit;
@@ -43,9 +44,9 @@ $userOrders = $ordStmt->fetchAll();
 include 'includes/header.php';
 ?>
 
-<div style="background: #FAF8F2; min-height: 85vh; padding: 40px 0 80px;">
+<div class="zk-band-page" style="background: #FAF8F2; min-height: 85vh; padding: 40px 0 80px;">
     <div class="container" style="max-width: 900px;">
-        <h1 style="font-family: 'Playfair Display', serif; font-size: 32px; color: var(--primary-green); margin: 0 0 8px;">
+        <h1 class="zk-band-head" style="font-family: 'Playfair Display', serif; font-size: 32px; color: var(--primary-green); margin: 0 0 8px;">
             Help & Customer Support 💬
         </h1>
         <p style="color: #666; font-size: 14px; margin: 0 0 30px;">We are here to assist with your deliveries, refunds, and queries 24/7</p>

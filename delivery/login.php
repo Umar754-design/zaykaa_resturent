@@ -188,6 +188,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
             // Audit trail: every shift selfie is kept for admin review (client-side match is not trusted alone)
             rider_log_shift_selfie((int) $pending['rider_id'], $savedSelfiePath, $selfieCheck['hash'], $matchDistance, $matchScore);
+            if ($matchScore < 80) {
+                notify_admin('rider_selfie', "Check shift selfie: {$pending['name']}",
+                    "Phone face match only {$matchScore}% — compare with KYC photo", 'delivery-partners.php#shiftSelfies');
+            }
             login_clear_failures('rider_selfie', (string) $pending['rider_id']);
 
             // Complete Login Session
