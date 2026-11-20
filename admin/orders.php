@@ -2,7 +2,10 @@
 // ===================================================
 // Admin: Orders Control & Master Dispatch
 // ===================================================
-require_once __DIR__ . '/includes/admin-header.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
+
+require_role(['admin']);
 
 // Handle Post Actions (Status Change, Rider Reassignment, Cancellation)
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
@@ -72,6 +75,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     header("Location: orders.php?" . http_build_query($_GET));
     exit;
 }
+
+require_once __DIR__ . '/includes/admin-header.php';
 
 // Fetch Filters
 $status_filter = $_GET['status'] ?? '';
@@ -297,7 +302,7 @@ $available_riders = $pdo->query("SELECT dp.id, u.name, dp.vehicle_type, dp.vehic
                                         <a href="../invoice.php?order_id=<?php echo $o['id']; ?>" target="_blank" class="btn" style="padding: 4px 8px; font-size: 11px; background: #F1F5F9; color: #475569;" title="View Tax Invoice">
                                             📄 Invoice
                                         </a>
-                                        <button type="button" onclick='openActionModal(<?php echo json_encode($o); ?>)' class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;">
+                                        <button type="button" onclick='openActionModal(<?php echo js_value($o); ?>)' class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;">
                                             Manage
                                         </button>
                                     </div>

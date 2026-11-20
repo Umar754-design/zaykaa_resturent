@@ -126,6 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         exit;
                     } else {
                         // Auto login for customer and restaurant
+                        login_session_regenerate();
                         $_SESSION['user_id'] = $newUserId;
                         $_SESSION['user_role'] = $role;
                         $_SESSION['user_name'] = $name;

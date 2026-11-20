@@ -3,23 +3,49 @@
 // Database Configuration & Connection - Zayka Platform
 // ===================================================
 
+if (ob_get_level() === 0) {
+    ob_start();
+}
+
+// Load environment variables from the project-root .env file (never commit it)
+if (!function_exists('zayka_load_env')) {
+    function zayka_load_env($file) {
+        if (!is_readable($file)) {
+            return;
+        }
+        foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            $line = trim($line);
+            if ($line === '' || $line[0] === '#' || strpos($line, '=') === false) {
+                continue;
+            }
+            [$key, $value] = array_map('trim', explode('=', $line, 2));
+            $value = trim($value, "\"'");
+            if (getenv($key) === false) {
+                putenv("$key=$value");
+                $_ENV[$key] = $value;
+            }
+        }
+    }
+}
+zayka_load_env(dirname(__DIR__) . '/.env');
+
+if (!function_exists('env')) {
+    function env($key, $default = null) {
+        $value = getenv($key);
+        return ($value === false || $value === '') ? $default : $value;
+    }
+}
+
 $isLocal = (!isset($_SERVER['SERVER_NAME']) || in_array($_SERVER['SERVER_NAME'], ['localhost', '127.0.0.1', '::1'])) || php_sapi_name() === 'cli';
 
-if ($isLocal) {
-    define('DB_HOST', 'localhost');
-    define('DB_PORT', 3306);
-    define('DB_NAME', 'zayka_db');
-    define('DB_USER', 'root');
-    define('DB_PASS', '');
-    define('DB_CHARSET', 'utf8mb4');
-} else {
-    define('DB_HOST', 'localhost');
-    define('DB_PORT', 3306);
-    define('DB_NAME', 'u939972774_zyka_db');
-    define('DB_USER', 'u939972774_zykauser');
-    define('DB_PASS', 'Support@9693');
-    define('DB_CHARSET', 'utf8mb4');
-}
+define('APP_IS_LOCAL', $isLocal);
+define('APP_DEBUG', filter_var(env('APP_DEBUG', $isLocal ? 'true' : 'false'), FILTER_VALIDATE_BOOLEAN));
+define('DB_HOST', env('DB_HOST', 'localhost'));
+define('DB_PORT', (int) env('DB_PORT', 3306));
+define('DB_NAME', env('DB_NAME', 'zayka_db'));
+define('DB_USER', env('DB_USER', 'root'));
+define('DB_PASS', env('DB_PASS', ''));
+define('DB_CHARSET', 'utf8mb4');
 
 /**
  * Returns the PDO database connection singleton.
@@ -46,8 +72,8 @@ function get_db_connection() {
         try {
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         } catch (PDOException $e) {
-            // If primary credentials fail and we haven't tried root, attempt local XAMPP root fallback
-            if (DB_USER !== 'root') {
+            // If primary credentials fail locally, attempt XAMPP root fallback (never in production)
+            if (DB_USER !== 'root' && APP_IS_LOCAL) {
                 $pdo = new PDO("mysql:host=localhost;port=3306;charset=utf8mb4", 'root', '', $options);
                 $dbName = 'zayka_db';
             } else {
@@ -86,6 +112,11 @@ function get_db_connection() {
 
         return $pdo;
     } catch (PDOException $e) {
+        error_log('Zayka DB connection error: ' . $e->getMessage());
+        if (!APP_DEBUG) {
+            http_response_code(500);
+            die("<div style='font-family:sans-serif;padding:30px;'><h2>Service temporarily unavailable</h2><p>Please try again in a few minutes.</p></div>");
+        }
         // Detailed error in development mode
         die("<div style='font-family:sans-serif;padding:30px;background:#fee;color:#900;border:1px solid #fcc;margin:20px;border-radius:8px;'>
             <h2>Database Connection Error</h2>

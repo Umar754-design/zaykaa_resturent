@@ -2,7 +2,10 @@
 // ===================================================
 // Admin: Customer Accounts Management
 // ===================================================
-require_once __DIR__ . '/includes/admin-header.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
+
+require_role(['admin']);
 
 // Handle Actions: Status Toggle & Wallet Adjustment
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -48,6 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Location: customers.php');
     exit;
 }
+
+require_once __DIR__ . '/includes/admin-header.php';
 
 // Search and filter
 $search = trim($_GET['q'] ?? '');
@@ -163,7 +168,7 @@ $total_customer_spend = array_sum(array_column($customers, 'total_spent'));
                                 <td style="padding: 14px 18px;">
                                     <div style="display: flex; align-items: center; gap: 12px;">
                                         <div style="width: 38px; height: 38px; border-radius: 50%; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #063F2B;">
-                                            <?php echo strtoupper(substr($c['name'], 0, 1)); ?>
+                                            <?php echo e(strtoupper(substr($c['name'], 0, 1))); ?>
                                         </div>
                                         <div>
                                             <div style="font-weight: 600; color: #0F172A;"><?php echo htmlspecialchars($c['name']); ?></div>
@@ -198,7 +203,7 @@ $total_customer_spend = array_sum(array_column($customers, 'total_spent'));
                                 </td>
                                 <td style="padding: 14px 18px; text-align: right;">
                                     <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                                        <button type="button" onclick="openWalletModal(<?php echo $c['id']; ?>, '<?php echo addslashes($c['name']); ?>', <?php echo $c['wallet_balance']; ?>)" class="btn" style="background: #EFF6FF; color: #2563EB; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                        <button type="button" onclick="openWalletModal(<?php echo (int) $c['id']; ?>, <?php echo js_value($c['name']); ?>, <?php echo (float) $c['wallet_balance']; ?>)" class="btn" style="background: #EFF6FF; color: #2563EB; padding: 6px 12px; font-size: 12px; font-weight: 600;">
                                             💳 Adjust
                                         </button>
                                         <form method="POST" style="margin: 0;" onsubmit="return confirm('Change status for <?php echo htmlspecialchars($c['name']); ?>?');">

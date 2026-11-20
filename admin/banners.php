@@ -126,7 +126,7 @@ $banners = $pdo->query("SELECT * FROM banners ORDER BY sort_order ASC, created_a
                             </form>
 
                             <div style="display: flex; gap: 6px;">
-                                <button type="button" onclick='openEditBannerModal(<?php echo json_encode($b); ?>)' class="btn" style="padding: 5px 12px; font-size: 11px; background: #EFF6FF; color: #2563EB;">
+                                <button type="button" onclick='openEditBannerModal(<?php echo js_value($b); ?>)' class="btn" style="padding: 5px 12px; font-size: 11px; background: #EFF6FF; color: #2563EB;">
                                     Edit
                                 </button>
                                 <form method="POST" style="margin: 0;" onsubmit="return confirm('Delete banner <?php echo htmlspecialchars($b['title']); ?>?');">

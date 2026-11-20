@@ -264,11 +264,11 @@ function initTrackingMap() {
 
     restMarker = L.marker([restLat, restLng], { icon: makeIcon('🍳') })
         .addTo(map)
-        .bindPopup(`<strong><?php echo addslashes($order['rest_name']); ?></strong><br>Restaurant Kitchen`);
+        .bindPopup('<strong>' + <?php echo js_value(e($order['rest_name'])); ?> + '</strong><br>Restaurant Kitchen');
 
     destMarker = L.marker([destLat, destLng], { icon: makeIcon('🏠') })
         .addTo(map)
-        .bindPopup(`<strong>Delivery Destination</strong><br><?php echo addslashes($dest['address_line'] ?? ''); ?>`);
+        .bindPopup('<strong>Delivery Destination</strong><br>' + <?php echo js_value(e($dest['address_line'] ?? '')); ?>);
 
     // Draw route connecting points
     routeLine = L.polyline([[restLat, restLng], [destLat, destLng]], {

@@ -5,7 +5,7 @@
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/functions.php';
 
-$redirect = $_GET['redirect'] ?? 'index.php';
+$redirect = safe_redirect_target($_GET['redirect'] ?? 'index.php');
 
 // If already logged in, redirect
 if (is_logged_in()) {
@@ -22,16 +22,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
-    if ($email && $password) {
+    $lockMinutes = $email ? login_lock_minutes('customer', $email) : 0;
+    if ($lockMinutes) {
+        $error = login_lock_message($lockMinutes);
+    } elseif ($email && $password) {
         $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password'])) {
+            login_clear_failures('customer', $email);
             if ($user['status'] === 'suspended') {
                 $error = 'Your account has been suspended. Please contact platform support.';
             } else {
                 init_session();
+                login_session_regenerate();
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_role'] = $user['role'];
                 $_SESSION['user_name'] = $user['name'];
@@ -59,13 +64,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         header("Location: delivery/login.php");
                         exit;
                     } elseif ($rider['kyc_status'] === 'approved') {
+                        $challenge = bin2hex(random_bytes(16));
                         $_SESSION['pending_rider_login'] = [
-                            'user_id'      => (int)$user['id'],
-                            'rider_id'     => (int)$rider['id'],
-                            'name'         => $user['name'],
-                            'email'        => $user['email'],
-                            'phone'        => $user['phone'],
-                            'selfie_image' => $rider['selfie_image'] ?? ''
+                            'user_id'        => (int)$user['id'],
+                            'rider_id'       => (int)$rider['id'],
+                            'name'           => $user['name'],
+                            'email'          => $user['email'],
+                            'phone'          => $user['phone'],
+                            'selfie_image'   => $rider['selfie_image'] ?? '',
+                            'challenge'      => $challenge,
+                            'challenge_time' => time()
                         ];
                         unset($_SESSION['user_id'], $_SESSION['user_role'], $_SESSION['user_name']);
                         header("Location: delivery/login.php");
@@ -78,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         } else {
+            login_record_failure('customer', $email);
             $error = 'Invalid email address or password.';
         }
     } else {

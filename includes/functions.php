@@ -3,6 +3,10 @@
 // Core Functions & Utility Library - Zayka Platform
 // ===================================================
 
+if (ob_get_level() === 0) {
+    ob_start();
+}
+
 require_once __DIR__ . '/../config/database.php';
 
 /**
@@ -10,10 +14,127 @@ require_once __DIR__ . '/../config/database.php';
  */
 function init_session() {
     if (session_status() === PHP_SESSION_NONE) {
+        $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        ini_set('session.use_strict_mode', '1');
+        ini_set('session.use_only_cookies', '1');
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path'     => '/',
+            'secure'   => $secure,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
         session_start();
     }
 }
 init_session();
+
+/**
+ * Call right after a successful login to prevent session fixation.
+ */
+function login_session_regenerate() {
+    init_session();
+    session_regenerate_id(true);
+    unset($_SESSION['csrf_token']);
+}
+
+/**
+ * Login brute-force protection: max 5 failed attempts per email+IP in 15 minutes.
+ */
+define('LOGIN_MAX_ATTEMPTS', 5);
+define('LOGIN_LOCK_MINUTES', 15);
+
+function login_attempt_key($scope, $email) {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'cli';
+    return hash('sha256', $scope . '|' . strtolower(trim((string) $email)) . '|' . $ip);
+}
+
+function login_attempts_table() {
+    global $pdo;
+    static $ready = false;
+    if (!$ready) {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `login_attempts` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `attempt_key` CHAR(64) NOT NULL,
+            `attempted_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_key_time` (`attempt_key`, `attempted_at`)
+        ) ENGINE=InnoDB");
+        $ready = true;
+    }
+    return $pdo;
+}
+
+/** Returns minutes the caller must wait, or 0 if login may be attempted. */
+function login_lock_minutes($scope, $email) {
+    $db = login_attempts_table();
+    $stmt = $db->prepare("SELECT COUNT(*), TIMESTAMPDIFF(SECOND, NOW(), MIN(attempted_at) + INTERVAL " . LOGIN_LOCK_MINUTES . " MINUTE) FROM login_attempts
+        WHERE attempt_key = ? AND attempted_at > (NOW() - INTERVAL " . LOGIN_LOCK_MINUTES . " MINUTE)");
+    $stmt->execute([login_attempt_key($scope, $email)]);
+    [$count, $secondsLeft] = $stmt->fetch(PDO::FETCH_NUM);
+    if ((int) $count < LOGIN_MAX_ATTEMPTS) {
+        return 0;
+    }
+    return max(1, (int) ceil(((int) $secondsLeft) / 60));
+}
+
+function login_record_failure($scope, $email) {
+    $db = login_attempts_table();
+    $db->prepare("INSERT INTO login_attempts (attempt_key) VALUES (?)")->execute([login_attempt_key($scope, $email)]);
+    if (random_int(1, 50) === 1) {
+        $db->exec("DELETE FROM login_attempts WHERE attempted_at < (NOW() - INTERVAL 1 DAY)");
+    }
+}
+
+function login_clear_failures($scope, $email) {
+    login_attempts_table()->prepare("DELETE FROM login_attempts WHERE attempt_key = ?")->execute([login_attempt_key($scope, $email)]);
+}
+
+function login_lock_message($minutes) {
+    return "Too many failed login attempts. Please try again in {$minutes} minute" . ($minutes > 1 ? 's' : '') . '.';
+}
+
+/**
+ * Only allow redirects to local relative paths (blocks open redirects like //evil.com).
+ */
+function safe_redirect_target($target, $fallback = 'index.php') {
+    $target = trim((string) $target);
+    if ($target === '' || preg_match('#^[a-z][a-z0-9+.-]*:#i', $target)
+        || strpos($target, '//') === 0 || strpos($target, chr(92)) !== false
+        || preg_match('/[\r\n]/', $target)) {
+        return $fallback;
+    }
+    return $target;
+}
+
+/**
+ * JSON-encode a value so it is safe inside HTML attributes and <script> blocks.
+ */
+function js_value($value) {
+    return json_encode($value, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+}
+
+/**
+ * For legacy GET links that change data: the link must carry ?csrf_token=...
+ * Use csrf_query() when building such links.
+ */
+function csrf_query() {
+    return 'csrf_token=' . urlencode(csrf_token());
+}
+
+function require_csrf_get() {
+    if (!verify_csrf_token($_GET['csrf_token'] ?? null)) {
+        set_flash('error', 'Security check failed. Please try the action again.');
+        header('Location: ' . strtok($_SERVER['REQUEST_URI'] ?? 'index.php', '?'));
+        exit;
+    }
+}
+
+/**
+ * HTML-escape helper for output.
+ */
+function e($value) {
+    return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
 
 /**
  * Returns currently logged-in user array or null
@@ -158,7 +279,74 @@ function csrf_token() {
 
 function verify_csrf_token($token) {
     init_session();
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    return is_string($token) && isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+function csrf_field() {
+    return '<input type="hidden" name="csrf_token" value="' . csrf_token() . '">';
+}
+
+/**
+ * Rejects any state-changing request (POST/PUT/PATCH/DELETE) without a valid CSRF token.
+ * Token is accepted from the `csrf_token` form field or the `X-CSRF-Token` header.
+ */
+function enforce_csrf() {
+    if (php_sapi_name() === 'cli') {
+        return;
+    }
+    $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+    if (!in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+        return;
+    }
+    $token = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
+    if (verify_csrf_token($token)) {
+        return;
+    }
+
+    $isApi = strpos($_SERVER['SCRIPT_NAME'] ?? '', '/api/') !== false
+        || !empty($_SERVER['HTTP_X_CSRF_TOKEN'])
+        || stripos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false;
+    http_response_code(419);
+    if ($isApi) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'message' => 'Session expired. Please refresh the page and try again.']);
+        exit;
+    }
+    set_flash('error', 'Your session expired. Please try again.');
+    $back = $_SERVER['REQUEST_URI'] ?? '/';
+    header('Location: ' . $back);
+    exit;
+}
+
+/**
+ * Output filter: adds the CSRF token to every POST form and patches fetch()
+ * so same-origin non-GET requests carry the X-CSRF-Token header.
+ */
+function csrf_output_filter($html) {
+    if (stripos($html, '<form') === false && stripos($html, '</head>') === false) {
+        return $html;
+    }
+    foreach (headers_list() as $h) {
+        if (stripos($h, 'Content-Type:') === 0 && stripos($h, 'text/html') === false) {
+            return $html;
+        }
+    }
+    $token = htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8');
+    $field = '<input type="hidden" name="csrf_token" value="' . $token . '">';
+    $html = preg_replace_callback(
+        '/<form\b[^>]*\bmethod\s*=\s*["\']?post["\']?[^>]*>/i',
+        function ($m) use ($field) { return $m[0] . $field; },
+        $html
+    );
+    $script = '<meta name="csrf-token" content="' . $token . '"><script>(function(){'
+        . 'var t=document.querySelector(\'meta[name="csrf-token"]\').content,f=window.fetch;'
+        . 'window.fetch=function(i,o){o=o||{};var m=(o.method||(i&&i.method)||"GET").toUpperCase();'
+        . 'var u=typeof i==="string"?i:(i&&i.url)||"";var same=!/^https?:\/\//i.test(u)||u.indexOf(location.origin)===0;'
+        . 'if(m!=="GET"&&m!=="HEAD"&&same){var h=new Headers(o.headers||(i&&i.headers)||{});h.set("X-CSRF-Token",t);o.headers=h;}'
+        . 'return f.call(this,i,o);};})();</script>';
+    $count = 0;
+    $html = preg_replace('/<\/head>/i', $script . '</head>', $html, 1, $count);
+    return $html;
 }
 
 /**
@@ -357,3 +545,13 @@ function get_main_restaurant() {
     return $restaurant;
 }
 
+// ---------------------------------------------------
+// Global request protection (runs on every page/API)
+// ---------------------------------------------------
+if (php_sapi_name() !== 'cli') {
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    ob_start('csrf_output_filter');
+    enforce_csrf();
+}

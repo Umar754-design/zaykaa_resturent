@@ -159,7 +159,7 @@ $restaurants = $pdo->query("SELECT id, name FROM restaurants ORDER BY name ASC")
                                 </td>
                                 <td style="padding: 14px 16px; text-align: right;">
                                     <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                                        <button type="button" onclick='openEditCouponModal(<?php echo json_encode($c); ?>)' class="btn" style="padding: 4px 8px; font-size: 11px; background: #EFF6FF; color: #2563EB;">
+                                        <button type="button" onclick='openEditCouponModal(<?php echo js_value($c); ?>)' class="btn" style="padding: 4px 8px; font-size: 11px; background: #EFF6FF; color: #2563EB;">
                                             Edit
                                         </button>
                                         <form method="POST" style="margin: 0;">

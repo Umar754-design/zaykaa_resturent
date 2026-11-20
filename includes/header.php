@@ -115,7 +115,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                         <div class="user-dropdown-wrap">
                             <button type="button" class="nav-user-btn" id="userMenuBtn" onclick="toggleUserDropdown(event)" aria-haspopup="true" aria-expanded="false">
                                 <span class="user-avatar-circle">
-                                    <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
+                                    <?php echo e(strtoupper(substr($currentUser['name'], 0, 1))); ?>
                                 </span>
                                 <span class="user-name-label"><?php echo htmlspecialchars(explode(' ', $currentUser['name'])[0]); ?></span>
                                 <svg class="user-chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -124,7 +124,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                             </button>
                             <div id="userMenuDropdown" class="user-dropdown-card" role="menu">
                                 <div class="user-dropdown-header">
-                                    <div class="user-header-avatar"><?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?></div>
+                                    <div class="user-header-avatar"><?php echo e(strtoupper(substr($currentUser['name'], 0, 1))); ?></div>
                                     <div class="user-header-details">
                                         <div class="user-header-name"><?php echo htmlspecialchars($currentUser['name']); ?></div>
                                         <div class="user-header-role-badge role-<?php echo htmlspecialchars($currentUser['role']); ?>">
@@ -247,7 +247,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
         <div class="drawer-auth-section">
             <?php if ($currentUser): ?>
                 <div class="drawer-user-info">
-                    <div class="drawer-user-avatar"><?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?></div>
+                    <div class="drawer-user-avatar"><?php echo e(strtoupper(substr($currentUser['name'], 0, 1))); ?></div>
                     <div>
                         <div class="drawer-user-name"><?php echo htmlspecialchars($currentUser['name']); ?></div>
                         <div class="drawer-user-role"><?php echo htmlspecialchars(ucfirst($currentUser['role'])); ?></div>

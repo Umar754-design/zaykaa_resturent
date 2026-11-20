@@ -689,14 +689,14 @@ $liveOrders = $liveStmt->fetchAll();
 <script>
 // Aggregated Chart Datasets passed from PHP
 const dataSets = {
-    '7d': <?php echo json_encode($data7Days); ?>,
-    '30d': <?php echo json_encode($data30Days); ?>,
-    'year': <?php echo json_encode($dataYearly); ?>
+    '7d': <?php echo js_value($data7Days); ?>,
+    '30d': <?php echo js_value($data30Days); ?>,
+    'year': <?php echo js_value($dataYearly); ?>
 };
 
 const categoryData = {
-    labels: <?php echo json_encode($catLabels); ?>,
-    values: <?php echo json_encode($catSales); ?>
+    labels: <?php echo js_value($catLabels); ?>,
+    values: <?php echo js_value($catSales); ?>
 };
 
 const orderStatusData = {
@@ -705,9 +705,9 @@ const orderStatusData = {
 };
 
 const topDishesData = {
-    labels: <?php echo json_encode(array_column($topDishes, 'item_name')); ?>,
-    revenues: <?php echo json_encode(array_map('floatval', array_column($topDishes, 'total_revenue'))); ?>,
-    quantities: <?php echo json_encode(array_map('intval', array_column($topDishes, 'total_qty'))); ?>
+    labels: <?php echo js_value(array_column($topDishes, 'item_name')); ?>,
+    revenues: <?php echo js_value(array_map('floatval', array_column($topDishes, 'total_revenue'))); ?>,
+    quantities: <?php echo js_value(array_map('intval', array_column($topDishes, 'total_qty'))); ?>
 };
 
 // State Variables

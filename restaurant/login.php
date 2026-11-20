@@ -15,18 +15,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND role IN ('restaurant', 'admin')");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
+    $lockMinutes = login_lock_minutes('restaurant', $email);
+    $user = null;
+    if (!$lockMinutes) {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND role IN ('restaurant', 'admin')");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+    }
 
-    if ($user && password_verify($password, $user['password'])) {
+    if ($lockMinutes) {
+        $error = login_lock_message($lockMinutes);
+    } elseif ($user && password_verify($password, $user['password'])) {
+        login_clear_failures('restaurant', $email);
         init_session();
+        login_session_regenerate();
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_role'] = $user['role'];
         $_SESSION['user_name'] = $user['name'];
         header("Location: dashboard.php");
         exit;
     } else {
+        login_record_failure('restaurant', $email);
         $error = 'Invalid restaurant partner credentials.';
     }
 }

@@ -2,10 +2,14 @@
 // ===================================================
 // Restaurant Management - Admin Control Center
 // ===================================================
-include 'includes/admin-header.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
+
+require_role(['admin']);
 
 // Handle quick actions: approve, suspend, delete
 if (isset($_GET['action']) && isset($_GET['id'])) {
+    require_csrf_get();
     $act = $_GET['action'];
     $rId = (int)$_GET['id'];
 
@@ -22,6 +26,8 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     header("Location: restaurants.php");
     exit;
 }
+
+include 'includes/admin-header.php';
 
 $restaurants = $pdo->query("SELECT r.*, u.name as owner_name, u.email as owner_email, u.phone as owner_phone,
                                    COUNT(o.id) as total_orders, COALESCE(SUM(o.total_amount), 0) as total_sales
@@ -112,15 +118,15 @@ $restaurants = $pdo->query("SELECT r.*, u.name as owner_name, u.email as owner_e
                                             Edit
                                         </a>
                                         <?php if ($r['is_approved']): ?>
-                                            <a href="restaurants.php?action=suspend&id=<?php echo $r['id']; ?>" style="padding: 5px 10px; background: #FEF3C7; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #B45309;">
+                                            <a href="restaurants.php?action=suspend&id=<?php echo (int) $r['id']; ?>&<?php echo csrf_query(); ?>" style="padding: 5px 10px; background: #FEF3C7; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #B45309;">
                                                 Suspend
                                             </a>
                                         <?php else: ?>
-                                            <a href="restaurants.php?action=approve&id=<?php echo $r['id']; ?>" style="padding: 5px 10px; background: #DEF7EC; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #046C4E;">
+                                            <a href="restaurants.php?action=approve&id=<?php echo (int) $r['id']; ?>&<?php echo csrf_query(); ?>" style="padding: 5px 10px; background: #DEF7EC; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #046C4E;">
                                                 Approve
                                             </a>
                                         <?php endif; ?>
-                                        <a href="restaurants.php?action=delete&id=<?php echo $r['id']; ?>" onclick="return confirm('Permanently delete restaurant?')" style="padding: 5px 10px; background: #FDE8E8; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #9B1C1C;">
+                                        <a href="restaurants.php?action=delete&id=<?php echo (int) $r['id']; ?>&<?php echo csrf_query(); ?>" onclick="return confirm('Permanently delete restaurant?')" style="padding: 5px 10px; background: #FDE8E8; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #9B1C1C;">
                                             ✕
                                         </a>
                                     </div>

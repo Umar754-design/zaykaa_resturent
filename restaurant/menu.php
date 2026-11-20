@@ -8,6 +8,7 @@ $restId = (int)$currentRestaurant['id'];
 
 // Handle item delete
 if (isset($_GET['delete'])) {
+    require_csrf_get();
     $delId = (int)$_GET['delete'];
     $delStmt = $pdo->prepare("DELETE FROM menu_items WHERE id = ? AND restaurant_id = ?");
     $delStmt->execute([$delId, $restId]);
@@ -117,7 +118,7 @@ $items = $stmt->fetchAll();
                                         <a href="menu-item-edit.php?id=<?php echo $it['id']; ?>" style="padding: 5px 12px; background: #FAF8F2; border: 1px solid var(--light-border); border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #333;">
                                             ✏️ Edit
                                         </a>
-                                        <a href="menu.php?delete=<?php echo $it['id']; ?>" onclick="return confirm('Are you sure you want to delete this dish?')" style="padding: 5px 12px; background: #FDE8E8; border: 1px solid #F87171; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #9B1C1C;">
+                                        <a href="menu.php?delete=<?php echo (int) $it['id']; ?>&<?php echo csrf_query(); ?>" onclick="return confirm('Are you sure you want to delete this dish?')" style="padding: 5px 12px; background: #FDE8E8; border: 1px solid #F87171; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #9B1C1C;">
                                             ✕
                                         </a>
                                     </div>

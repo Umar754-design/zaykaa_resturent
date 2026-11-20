@@ -29,3 +29,8 @@ yarn-error.log*
 
 # OS
 Thumbs.db
+
+# Secrets & user uploads (Zayka)
+.env
+uploads/riders/*
+!uploads/riders/.gitkeep

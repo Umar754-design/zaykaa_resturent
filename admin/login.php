@@ -15,18 +15,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND role = 'admin'");
-    $stmt->execute([$email]);
-    $admin = $stmt->fetch();
+    $lockMinutes = login_lock_minutes('admin', $email);
+    $admin = null;
+    if (!$lockMinutes) {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND role = 'admin'");
+        $stmt->execute([$email]);
+        $admin = $stmt->fetch();
+    }
 
-    if ($admin && password_verify($password, $admin['password'])) {
+    if ($lockMinutes) {
+        $error = login_lock_message($lockMinutes);
+    } elseif ($admin && password_verify($password, $admin['password'])) {
+        login_clear_failures('admin', $email);
         init_session();
+        login_session_regenerate();
         $_SESSION['user_id'] = $admin['id'];
         $_SESSION['user_role'] = 'admin';
         $_SESSION['user_name'] = $admin['name'];
         header("Location: dashboard.php");
         exit;
     } else {
+        login_record_failure('admin', $email);
         $error = 'Invalid administrator credentials.';
     }
 }

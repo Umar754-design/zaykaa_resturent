@@ -2,10 +2,14 @@
 // ===================================================
 // Delivery Fleet Management - Admin Control Center
 // ===================================================
-include 'includes/admin-header.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
+
+require_role(['admin']);
 
 // Handle KYC approval / status toggle
 if (isset($_GET['action']) && isset($_GET['id'])) {
+    require_csrf_get();
     $act = $_GET['action'];
     $rId = (int)$_GET['id'];
 
@@ -19,6 +23,8 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     header("Location: delivery-partners.php");
     exit;
 }
+
+include 'includes/admin-header.php';
 
 $riders = $pdo->query("SELECT dp.*, u.name, u.email, u.phone, u.status as user_status 
                        FROM delivery_partners dp 
@@ -128,11 +134,11 @@ $riders = $pdo->query("SELECT dp.*, u.name, u.email, u.phone, u.status as user_s
                                 <td>
                                     <div style="display: flex; gap: 6px;">
                                         <?php if ($rd['kyc_status'] !== 'approved'): ?>
-                                            <a href="delivery-partners.php?action=approve_kyc&id=<?php echo $rd['id']; ?>" style="padding: 4px 10px; background: #DEF7EC; color: #046C4E; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none;">
+                                            <a href="delivery-partners.php?action=approve_kyc&id=<?php echo (int) $rd['id']; ?>&<?php echo csrf_query(); ?>" style="padding: 4px 10px; background: #DEF7EC; color: #046C4E; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none;">
                                                 Approve KYC
                                             </a>
                                         <?php else: ?>
-                                            <a href="delivery-partners.php?action=reject_kyc&id=<?php echo $rd['id']; ?>" style="padding: 4px 10px; background: #FDE8E8; color: #9B1C1C; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none;">
+                                            <a href="delivery-partners.php?action=reject_kyc&id=<?php echo (int) $rd['id']; ?>&<?php echo csrf_query(); ?>" style="padding: 4px 10px; background: #FDE8E8; color: #9B1C1C; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none;">
                                                 Revoke
                                             </a>
                                         <?php endif; ?>

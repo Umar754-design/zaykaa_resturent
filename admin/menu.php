@@ -2,10 +2,14 @@
 // ===================================================
 // Menu Items Management - Admin Control Center
 // ===================================================
-include 'includes/admin-header.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
+
+require_role(['admin']);
 
 // Handle dish delete
 if (isset($_GET['delete'])) {
+    require_csrf_get();
     $delId = (int)$_GET['delete'];
     $delStmt = $pdo->prepare("DELETE FROM menu_items WHERE id = ?");
     $delStmt->execute([$delId]);
@@ -13,6 +17,8 @@ if (isset($_GET['delete'])) {
     header("Location: menu.php");
     exit;
 }
+
+include 'includes/admin-header.php';
 
 // Category filter
 $catFilter = (int)($_GET['cat'] ?? 0);
@@ -168,7 +174,7 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY sort_order ASC, nam
                                         <a href="menu-edit.php?id=<?php echo $it['id']; ?>" style="padding: 5px 12px; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #1E293B;">
                                             ✏️ Edit
                                         </a>
-                                        <a href="menu.php?delete=<?php echo $it['id']; ?>" onclick="return confirm('Are you sure you want to delete this dish from the catalog?')" style="padding: 5px 10px; background: #FDE8E8; border: 1px solid #F87171; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #9B1C1C;">
+                                        <a href="menu.php?delete=<?php echo (int) $it['id']; ?>&<?php echo csrf_query(); ?>" onclick="return confirm('Are you sure you want to delete this dish from the catalog?')" style="padding: 5px 10px; background: #FDE8E8; border: 1px solid #F87171; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; color: #9B1C1C;">
                                             ✕
                                         </a>
                                     </div>
