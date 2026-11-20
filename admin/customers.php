@@ -203,7 +203,7 @@ $total_customer_spend = array_sum(array_column($customers, 'total_spent'));
                                 </td>
                                 <td style="padding: 14px 18px; text-align: right;">
                                     <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                                        <button type="button" onclick="openWalletModal(<?php echo (int) $c['id']; ?>, <?php echo js_value($c['name']); ?>, <?php echo (float) $c['wallet_balance']; ?>)" class="btn" style="background: #EFF6FF; color: #2563EB; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                        <button type="button" onclick="openWalletModal(<?php echo (int) $c['id']; ?>, <?php echo e(js_value($c['name'])); ?>, <?php echo (float) $c['wallet_balance']; ?>)" class="btn" style="background: #EFF6FF; color: #2563EB; padding: 6px 12px; font-size: 12px; font-weight: 600;">
                                             💳 Adjust
                                         </button>
                                         <form method="POST" style="margin: 0;" onsubmit="return confirm('Change status for <?php echo htmlspecialchars($c['name']); ?>?');">

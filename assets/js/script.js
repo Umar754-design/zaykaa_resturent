@@ -565,5 +565,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize both Desktop & Mobile food search bars
     initSearchAutocomplete('desktopSearchInput', 'desktopSearchDropdown', 'desktopSearchForm');
     initSearchAutocomplete('mobileSearchInput', 'mobileSearchDropdown', 'mobileSearchForm');
+    initSearchAutocomplete('homeSearchInput', 'homeSearchDropdown', 'homeSearchForm');
 });
 

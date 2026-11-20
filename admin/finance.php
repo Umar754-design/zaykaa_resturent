@@ -189,7 +189,7 @@ $payouts = $pdo->query($payouts_sql)->fetchAll();
                                     <td style="padding: 12px 16px; text-align: right;">
                                         <?php if ($p['status'] === 'pending'): ?>
                                             <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                                                <button type="button" onclick="openApproveModal(<?php echo (int) $p['id']; ?>, <?php echo js_value($p['partner_name']); ?>, <?php echo (float) $p['amount']; ?>)" class="btn" style="background: #16A34A; color: #fff; padding: 4px 10px; font-size: 11px;">
+                                                <button type="button" onclick="openApproveModal(<?php echo (int) $p['id']; ?>, <?php echo e(js_value($p['partner_name'])); ?>, <?php echo (float) $p['amount']; ?>)" class="btn" style="background: #16A34A; color: #fff; padding: 4px 10px; font-size: 11px;">
                                                     Disburse
                                                 </button>
                                                 <form method="POST" style="margin:0;" onsubmit="return confirm('Reject this payout request?');">

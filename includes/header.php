@@ -17,11 +17,13 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="preload" as="image" href="assets/images/hero/biryani.png" fetchpriority="high">
     <link rel="stylesheet" href="assets/css/style.css?v=mobile-fix-2">
     <link rel="stylesheet" href="assets/css/responsive.css?v=mobile-fix-2">
+    <?php foreach (($pageStyles ?? []) as $pageStyle): ?>
+    <link rel="stylesheet" href="<?php echo e($pageStyle); ?>">
+    <?php endforeach; ?>
 </head>
-<body>
+<body class="page-<?php echo e(basename($currentPage, '.php')); ?>">
     <div id="toastContainer"></div>
 
     <!-- Header / Navbar -->
